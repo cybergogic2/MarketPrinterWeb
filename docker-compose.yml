@@ -20,8 +20,10 @@ services:
     depends_on:
       - db
     environment:
-      - DATABASE_URL=postgres://license_user:license_pass@db:5432/license_db
       - DEBUG=True
+      - POSTGRES_DB=license_db
+      - POSTGRES_USER=license_user
+      - POSTGRES_PASSWORD=license_pass
 
 volumes:
   postgres_data:
