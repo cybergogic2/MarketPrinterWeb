@@ -1,0 +1,38 @@
+{% extends 'website/base.html' %}
+
+{% block content %}
+<div class="max-w-md mx-auto px-4 py-16">
+    <h1 class="text-2xl font-bold mb-6 text-center">Вход в личный кабинет</h1>
+
+    <form method="post" class="space-y-4">
+        {% csrf_token %}
+
+        {% if form.errors %}
+        <div class="bg-red-50 text-red-700 text-sm p-3 rounded-lg">
+            Неверный логин или пароль
+        </div>
+        {% endif %}
+
+        <div>
+            <label class="block text-sm text-gray-600 mb-1">Логин</label>
+            <input type="text" name="username" required
+                   class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:border-brand-500 outline-none">
+        </div>
+
+        <div>
+            <label class="block text-sm text-gray-600 mb-1">Пароль</label>
+            <input type="password" name="password" required
+                   class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:border-brand-500 outline-none">
+        </div>
+
+        <button type="submit"
+                class="w-full bg-brand-600 hover:bg-brand-700 text-white font-medium py-2 rounded-lg transition">
+            Войти
+        </button>
+    </form>
+
+    <p class="text-center text-sm text-gray-500 mt-6">
+        Нет аккаунта? <a href="#" class="text-brand-600 hover:underline">Зарегистрироваться</a>
+    </p>
+</div>
+{% endblock %}

@@ -1,0 +1,30 @@
+{% extends 'website/base.html' %}
+
+{% block content %}
+<div class="max-w-md mx-auto px-4 py-16 text-center">
+
+    <h1 class="text-2xl font-bold mb-4">Деактивировать лицензию?</h1>
+
+    <p class="text-gray-600 mb-2">
+        Ключ <span class="font-mono text-sm">{{ license_key.key }}</span>
+        будет отвязан от компьютера.
+    </p>
+
+    <p class="text-gray-500 text-sm mb-8">
+        После этого вы сможете активировать его на другом ПК.
+    </p>
+
+    <form method="post" class="space-y-3">
+        {% csrf_token %}
+        <button type="submit"
+                class="w-full bg-red-600 hover:bg-red-700 text-white font-medium py-3 rounded-lg transition">
+            Да, деактивировать
+        </button>
+        <a href="{% url 'account_dashboard' %}"
+           class="block w-full border border-gray-300 hover:border-gray-400 text-gray-700 font-medium py-3 rounded-lg transition">
+            Отмена
+        </a>
+    </form>
+
+</div>
+{% endblock %}

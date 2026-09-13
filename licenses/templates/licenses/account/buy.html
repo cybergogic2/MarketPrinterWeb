@@ -1,0 +1,79 @@
+{% extends 'website/base.html' %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto px-4 py-12">
+
+    {# Хлебные крошки / навигация назад #}
+    <a href="{% url 'account_dashboard' %}"
+       class="text-sm text-gray-500 hover:text-brand-600 mb-6 inline-block">
+        ← Назад к лицензиям
+    </a>
+
+    {# Заголовок #}
+    <h1 class="text-2xl font-bold mb-2">
+        {% if is_new %}
+            Покупка новой лицензии
+        {% else %}
+            Продление лицензии
+        {% endif %}
+    </h1>
+
+    {% if not is_new %}
+        {# Показываем ключ, который продлеваем #}
+        <p class="text-gray-500 text-sm font-mono mb-8 break-all">
+            {{ license_key.key }}
+        </p>
+
+        {# Показываем текущий срок, если он есть #}
+        {% if license_key.expires_at %}
+        <div class="bg-gray-50 border border-gray-200 rounded-lg p-3 mb-6 text-sm text-gray-600">
+            {% if license_key.status == 'expired' %}
+                Лицензия истекла {{ license_key.expires_at|date:"d.m.Y" }}.
+                Продление начнётся с сегодняшнего дня.
+            {% else %}
+                Текущий срок действия — до {{ license_key.expires_at|date:"d.m.Y" }}.
+                Новый срок добавится сверху.
+            {% endif %}
+        </div>
+        {% endif %}
+
+    {% else %}
+        <p class="text-gray-500 text-sm mb-8">
+            После оплаты ключ появится в вашем кабинете. Введите его в программе для активации.
+        </p>
+    {% endif %}
+
+    {# Форма выбора тарифа #}
+    <form method="post" class="space-y-3">
+        {% csrf_token %}
+
+        {% for days, info in pricing.items %}
+        <label class="block border border-gray-200 rounded-xl p-5 cursor-pointer hover:border-brand-500 transition
+                      has-[:checked]:border-brand-600 has-[:checked]:bg-brand-50">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <input type="radio" name="days" value="{{ days }}"
+                           class="w-4 h-4 text-brand-600 focus:ring-brand-500"
+                           {% if forloop.first %}checked{% endif %}>
+                    <span class="font-medium">{{ info.label }}</span>
+                </div>
+                <span class="font-bold text-lg">{{ info.price }}₽</span>
+            </div>
+        </label>
+        {% endfor %}
+
+        {# Кнопка оплаты #}
+        <button type="submit"
+                class="w-full bg-brand-600 hover:bg-brand-700 text-white font-medium py-3 rounded-lg transition mt-6">
+            Перейти к оплате
+        </button>
+    </form>
+
+    {# Примечание #}
+    <p class="text-center text-xs text-gray-400 mt-6">
+        Оплата происходит через защищённый платёжный шлюз.
+        После успешной оплаты лицензия активируется автоматически.
+    </p>
+
+</div>
+{% endblock %}

@@ -24,6 +24,7 @@ services:
       - POSTGRES_DB=license_db
       - POSTGRES_USER=license_user
       - POSTGRES_PASSWORD=license_pass
+      - INTERNAL_API_KEY=dev-secret-key-12345
 
 volumes:
   postgres_data:
