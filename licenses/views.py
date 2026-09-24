@@ -9,6 +9,9 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from datetime import timedelta
 
+from django.contrib.auth import login
+from .forms import RegisterForm
+
 from drf_spectacular.utils import extend_schema, OpenApiResponse, OpenApiExample
 
 from .models import LicenseKey, Activation, Payment
@@ -297,8 +300,18 @@ def buy_license(request, key_id=None):
             status='pending'
         )
 
-        # TODO: интеграция с ЮKassa — редирект на платёжную страницу
-        messages.info(request, f'Платёж создан на {PRICING[days]["price"]}₽. Интеграция с ЮKassa — следующий шаг.')
+        # ===== ЗАГЛУШКА: сразу помечаем платёж успешным =====
+        # В будущем это будет делать webhook ЮKassa
+        payment.status = 'succeeded'
+        payment.paid_at = timezone.now()
+        payment.save()
+
+        created_key = create_or_extend_license(payment)
+
+        messages.success(
+            request,
+            f'Лицензия оформлена на {payment.days} дней. Ключ: {created_key.key}'
+        )
         return redirect('account_dashboard')
 
     return render(request, 'licenses/account/buy.html', {
@@ -329,3 +342,41 @@ def deactivate_license(request, key_id):
     return render(request, 'licenses/account/deactivate.html', {
         'license_key': license_key,
     })
+
+def register(request):
+    """Регистрация нового пользователя."""
+    if request.user.is_authenticated:
+        return redirect('account_dashboard')
+
+    if request.method == 'POST':
+        form = RegisterForm(request.POST)
+        if form.is_valid():
+            user = form.save()
+            login(request, user)  # сразу авторизуем
+            messages.success(request, 'Регистрация успешна! Добро пожаловать.')
+            return redirect('account_dashboard')
+    else:
+        form = RegisterForm()
+
+    return render(request, 'licenses/auth/register.html', {'form': form})
+
+def create_or_extend_license(payment):
+    """Создаёт новую лицензию или продлевает существующую по платежу."""
+    if payment.license_key:
+        # Продление существующего ключа
+        license_key = payment.license_key
+        base_date = max(license_key.expires_at or timezone.now(), timezone.now())
+        license_key.expires_at = base_date + timedelta(days=payment.days)
+        license_key.is_active = True
+        license_key.save()
+    else:
+        # Новая лицензия
+        license_key = LicenseKey.objects.create(
+            user=payment.user,
+            expires_at=timezone.now() + timedelta(days=payment.days),
+            is_active=True
+        )
+        payment.license_key = license_key
+        payment.save()
+
+    return license_key

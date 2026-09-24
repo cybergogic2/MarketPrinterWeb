@@ -34,6 +34,7 @@ ALLOWED_HOSTS = []
 
 LOGIN_REDIRECT_URL = '/api/account/'
 LOGIN_URL = '/login/'
+LOGOUT_REDIRECT_URL = '/'
 
 # Application definition
 

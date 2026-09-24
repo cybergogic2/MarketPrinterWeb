@@ -10,6 +10,8 @@ from .views import (
     payment_history,
     buy_license,
     deactivate_license,
+# Аутентификация
+    register,
 )
 
 urlpatterns = [
@@ -25,4 +27,7 @@ urlpatterns = [
     path('account/buy/', buy_license, name='buy_new_license'),
     path('account/buy/<int:key_id>/', buy_license, name='buy_license'),
     path('account/deactivate/<int:key_id>/', deactivate_license, name='deactivate_license'),
+
+ # Аутентификация
+    path('register/', register, name='register'),
 ]
