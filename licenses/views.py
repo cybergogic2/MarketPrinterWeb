@@ -279,7 +279,7 @@ def ensure_superuser(user):
         raise PermissionDenied
 
 
-def parse_cell_selectors(selectors_text):
+def parse_selector_lines(selectors_text):
     selectors = [
         line.strip()
         for line in (selectors_text or '').splitlines()
@@ -292,6 +292,29 @@ def parse_cell_selectors(selectors_text):
         for line in DEFAULT_CELL_SELECTORS.splitlines()
         if line.strip()
     ]
+
+
+def value_or_selector(value, template):
+    value = (value or '').strip()
+    if not value:
+        return ''
+    if value.startswith(('[', '.', '#')):
+        return value
+    escaped = value.replace('"', '\\"')
+    return template.format(value=escaped)
+
+
+def get_cell_selectors(settings_obj):
+    selectors = [
+        value_or_selector(settings_obj.cell_number_class, '[class="{value}"]'),
+        value_or_selector(settings_obj.cell_number_data_testid, '[data-testid="{value}"]'),
+        value_or_selector(settings_obj.cell_number_id, '#{value}'),
+        (settings_obj.cell_extra_selector or '').strip(),
+    ]
+    selectors = [selector for selector in selectors if selector]
+    if selectors:
+        return selectors[:20]
+    return parse_selector_lines(settings_obj.cell_selectors)
 
 
 def account_context(request, **extra):
@@ -534,7 +557,7 @@ def extension_config(request):
         'printUrl': 'http://localhost:80/Integration/HTTPLabelPrint/Execute',
         'minCellToPrint': 1,
         'hotkey': 'Pause',
-        'selectors': parse_cell_selectors(settings_obj.cell_selectors),
+        'selectors': get_cell_selectors(settings_obj),
     })
 
 

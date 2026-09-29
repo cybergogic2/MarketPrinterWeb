@@ -4,9 +4,11 @@ from django.utils import timezone
 import uuid
 
 
+DEFAULT_CELL_CLASS_NAME = '_shelfTag_1tkm1_2 ozi-heading-500 _shelfTag_jn3ur_21'
+DEFAULT_CELL_DATA_TESTID = 'logItemPlace'
 DEFAULT_CELL_SELECTORS = '\n'.join([
-    '[class="_shelfTag_1tkm1_2 ozi-heading-500 _shelfTag_jn3ur_21"]',
-    '[data-testid="logItemPlace"]',
+    f'[class="{DEFAULT_CELL_CLASS_NAME}"]',
+    f'[data-testid="{DEFAULT_CELL_DATA_TESTID}"]',
 ])
 
 
@@ -103,6 +105,18 @@ class ServiceSettings(models.Model):
     max_url = models.URLField(blank=True)
     support_email = models.EmailField(blank=True)
     support_phone = models.CharField(max_length=64, blank=True)
+    cell_number_class = models.CharField(
+        max_length=255,
+        default=DEFAULT_CELL_CLASS_NAME,
+        blank=True,
+    )
+    cell_number_data_testid = models.CharField(
+        max_length=120,
+        default=DEFAULT_CELL_DATA_TESTID,
+        blank=True,
+    )
+    cell_number_id = models.CharField(max_length=120, blank=True)
+    cell_extra_selector = models.CharField(max_length=255, blank=True)
     cell_selectors = models.TextField(default=DEFAULT_CELL_SELECTORS, blank=True)
     notice_enabled = models.BooleanField(default=False)
     notice_title = models.CharField(max_length=160, blank=True)

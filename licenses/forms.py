@@ -61,7 +61,10 @@ class ServiceSettingsForm(forms.ModelForm):
             'max_url',
             'support_email',
             'support_phone',
-            'cell_selectors',
+            'cell_number_class',
+            'cell_number_data_testid',
+            'cell_number_id',
+            'cell_extra_selector',
         )
         labels = {
             'service_name': 'Название сервиса',
@@ -75,12 +78,23 @@ class ServiceSettingsForm(forms.ModelForm):
             'max_url': 'MAX',
             'support_email': 'E-mail',
             'support_phone': 'Телефон',
-            'cell_selectors': 'Идентификаторы или классы ячейки',
+            'cell_number_class': 'Класс элемента с номером ячейки',
+            'cell_number_data_testid': 'data-testid элемента с номером ячейки',
+            'cell_number_id': 'ID элемента с номером ячейки',
+            'cell_extra_selector': 'Дополнительный CSS-селектор',
         }
         help_texts = {
-            'cell_selectors': (
-                'Укажите CSS-селекторы по одному в строке. '
-                'Они попадут в конфиг браузерного расширения.'
+            'cell_number_class': (
+                'Например: _shelfTag_1tkm1_2 ozi-heading-500 _shelfTag_jn3ur_21.'
+            ),
+            'cell_number_data_testid': (
+                'Например: logItemPlace.'
+            ),
+            'cell_number_id': (
+                'Если у элемента есть id, укажите его без #.'
+            ),
+            'cell_extra_selector': (
+                'Для нестандартного случая можно указать полный CSS-селектор.'
             ),
         }
         widgets = {
@@ -95,10 +109,10 @@ class ServiceSettingsForm(forms.ModelForm):
             'max_url': forms.URLInput(attrs={'class': 'account-input'}),
             'support_email': forms.EmailInput(attrs={'class': 'account-input'}),
             'support_phone': forms.TextInput(attrs={'class': 'account-input'}),
-            'cell_selectors': forms.Textarea(attrs={
-                'class': 'account-input account-textarea account-code-textarea',
-                'rows': 5,
-            }),
+            'cell_number_class': forms.TextInput(attrs={'class': 'account-input account-code-input'}),
+            'cell_number_data_testid': forms.TextInput(attrs={'class': 'account-input account-code-input'}),
+            'cell_number_id': forms.TextInput(attrs={'class': 'account-input account-code-input'}),
+            'cell_extra_selector': forms.TextInput(attrs={'class': 'account-input account-code-input'}),
         }
 
 
