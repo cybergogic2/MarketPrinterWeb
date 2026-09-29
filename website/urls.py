@@ -5,6 +5,9 @@ from . import views
 
 urlpatterns = [
     path('static/extension/pvz-extension-config.json', extension_config, name='extension_config_legacy'),
-    path('', auth_views.LoginView.as_view(template_name='licenses/auth/login.html'), name='index'),
+    path('', auth_views.LoginView.as_view(
+        template_name='licenses/auth/login.html',
+        redirect_authenticated_user=True,
+    ), name='index'),
     path('download/', views.download_app, name='download'),
 ]
