@@ -51,6 +51,7 @@ class ServiceSettingsForm(forms.ModelForm):
         model = ServiceSettings
         fields = (
             'service_name',
+            'token_price',
             'company_name',
             'ogrnip',
             'inn',
@@ -68,6 +69,7 @@ class ServiceSettingsForm(forms.ModelForm):
         )
         labels = {
             'service_name': 'Название сервиса',
+            'token_price': 'Стоимость токена',
             'company_name': 'ИП',
             'ogrnip': 'ОГРНИП',
             'inn': 'ИНН',
@@ -99,6 +101,12 @@ class ServiceSettingsForm(forms.ModelForm):
         }
         widgets = {
             'service_name': forms.TextInput(attrs={'class': 'account-input'}),
+            'token_price': forms.NumberInput(attrs={
+                'class': 'account-input',
+                'min': '0',
+                'step': '0.01',
+                'inputmode': 'decimal',
+            }),
             'company_name': forms.TextInput(attrs={'class': 'account-input'}),
             'ogrnip': forms.TextInput(attrs={'class': 'account-input'}),
             'inn': forms.TextInput(attrs={'class': 'account-input'}),
