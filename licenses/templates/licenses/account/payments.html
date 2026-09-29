@@ -1,6 +1,6 @@
 {% extends 'licenses/account/base.html' %}
 
-{% block title %}Платежи — ПВЗшник.рф{% endblock %}
+{% block title %}Платежи — {{ service_settings.service_name|default:"Magic ПВЗ" }}{% endblock %}
 
 {% block account_content %}
 <div class="account-page-head">

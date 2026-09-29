@@ -1,12 +1,12 @@
 {% extends 'licenses/account/base.html' %}
 
-{% block title %}Настройки сервиса — ПВЗшник.рф{% endblock %}
+{% block title %}Настройки — {{ service_settings.service_name|default:"Magic ПВЗ" }}{% endblock %}
 
 {% block account_content %}
 <div class="account-page-head">
     <div>
-        <h1>Настройки сервиса</h1>
-        <p>Эти данные видны пользователям в боковой колонке личного кабинета.</p>
+        <h1>Настройки</h1>
+        <p>Эти данные используются в личном кабинете и конфиге браузерного расширения.</p>
     </div>
 </div>
 
@@ -25,55 +25,87 @@
             </div>
         {% endif %}
 
-        <div class="account-form-grid">
-            <div class="account-field">
-                {{ form.company_name.label_tag }}
-                {{ form.company_name }}
-                {% for error in form.company_name.errors %}<span class="account-field-error">{{ error }}</span>{% endfor %}
-            </div>
-            <div class="account-field">
-                {{ form.support_hours.label_tag }}
-                {{ form.support_hours }}
-                {% for error in form.support_hours.errors %}<span class="account-field-error">{{ error }}</span>{% endfor %}
-            </div>
-            <div class="account-field">
-                {{ form.inn.label_tag }}
-                {{ form.inn }}
-                {% for error in form.inn.errors %}<span class="account-field-error">{{ error }}</span>{% endfor %}
-            </div>
-            <div class="account-field">
-                {{ form.ogrnip.label_tag }}
-                {{ form.ogrnip }}
-                {% for error in form.ogrnip.errors %}<span class="account-field-error">{{ error }}</span>{% endfor %}
-            </div>
-            <div class="account-field">
-                {{ form.telegram_url.label_tag }}
-                {{ form.telegram_url }}
-                {% for error in form.telegram_url.errors %}<span class="account-field-error">{{ error }}</span>{% endfor %}
-            </div>
-            <div class="account-field">
-                {{ form.whatsapp_url.label_tag }}
-                {{ form.whatsapp_url }}
-                {% for error in form.whatsapp_url.errors %}<span class="account-field-error">{{ error }}</span>{% endfor %}
-            </div>
-        </div>
+        <div class="account-settings-grid">
+            <section class="account-settings-block">
+                <h2>Основные настройки</h2>
+                <div class="account-field">
+                    {{ form.service_name.label_tag }}
+                    {{ form.service_name }}
+                    {% for error in form.service_name.errors %}<span class="account-field-error">{{ error }}</span>{% endfor %}
+                </div>
+            </section>
 
-        <label class="account-checkbox-line">
-            {{ form.notice_enabled }}
-            <span>{{ form.notice_enabled.label }}</span>
-        </label>
-        {% for error in form.notice_enabled.errors %}<span class="account-field-error">{{ error }}</span>{% endfor %}
+            <section class="account-settings-block">
+                <h2>Настройки ИП</h2>
+                <div class="account-form-grid">
+                    <div class="account-field">
+                        {{ form.company_name.label_tag }}
+                        {{ form.company_name }}
+                        {% for error in form.company_name.errors %}<span class="account-field-error">{{ error }}</span>{% endfor %}
+                    </div>
+                    <div class="account-field">
+                        {{ form.ogrnip.label_tag }}
+                        {{ form.ogrnip }}
+                        {% for error in form.ogrnip.errors %}<span class="account-field-error">{{ error }}</span>{% endfor %}
+                    </div>
+                    <div class="account-field">
+                        {{ form.inn.label_tag }}
+                        {{ form.inn }}
+                        {% for error in form.inn.errors %}<span class="account-field-error">{{ error }}</span>{% endfor %}
+                    </div>
+                    <div class="account-field">
+                        {{ form.bank_name.label_tag }}
+                        {{ form.bank_name }}
+                        {% for error in form.bank_name.errors %}<span class="account-field-error">{{ error }}</span>{% endfor %}
+                    </div>
+                    <div class="account-field">
+                        {{ form.bik.label_tag }}
+                        {{ form.bik }}
+                        {% for error in form.bik.errors %}<span class="account-field-error">{{ error }}</span>{% endfor %}
+                    </div>
+                    <div class="account-field">
+                        {{ form.bank_account.label_tag }}
+                        {{ form.bank_account }}
+                        {% for error in form.bank_account.errors %}<span class="account-field-error">{{ error }}</span>{% endfor %}
+                    </div>
+                </div>
+            </section>
 
-        <div class="account-field">
-            {{ form.notice_title.label_tag }}
-            {{ form.notice_title }}
-            {% for error in form.notice_title.errors %}<span class="account-field-error">{{ error }}</span>{% endfor %}
-        </div>
+            <section class="account-settings-block">
+                <h2>Настройки поддержки</h2>
+                <div class="account-form-grid">
+                    <div class="account-field">
+                        {{ form.telegram_url.label_tag }}
+                        {{ form.telegram_url }}
+                        {% for error in form.telegram_url.errors %}<span class="account-field-error">{{ error }}</span>{% endfor %}
+                    </div>
+                    <div class="account-field">
+                        {{ form.max_url.label_tag }}
+                        {{ form.max_url }}
+                        {% for error in form.max_url.errors %}<span class="account-field-error">{{ error }}</span>{% endfor %}
+                    </div>
+                    <div class="account-field">
+                        {{ form.support_email.label_tag }}
+                        {{ form.support_email }}
+                        {% for error in form.support_email.errors %}<span class="account-field-error">{{ error }}</span>{% endfor %}
+                    </div>
+                    <div class="account-field">
+                        {{ form.support_phone.label_tag }}
+                        {{ form.support_phone }}
+                        {% for error in form.support_phone.errors %}<span class="account-field-error">{{ error }}</span>{% endfor %}
+                    </div>
+                </div>
+            </section>
 
-        <div class="account-field">
-            {{ form.notice_text.label_tag }}
-            {{ form.notice_text }}
-            {% for error in form.notice_text.errors %}<span class="account-field-error">{{ error }}</span>{% endfor %}
+            <section class="account-settings-block">
+                <h2>Настройки ячеек</h2>
+                <div class="account-field">
+                    {{ form.cell_selectors.label_tag }}
+                    {{ form.cell_selectors }}
+                    {% if form.cell_selectors.help_text %}<span class="account-help">{{ form.cell_selectors.help_text }}</span>{% endif %}
+                    {% for error in form.cell_selectors.errors %}<span class="account-field-error">{{ error }}</span>{% endfor %}
+                </div>
+            </section>
         </div>
 
         <div class="account-actions">

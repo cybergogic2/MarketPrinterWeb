@@ -1,6 +1,6 @@
 {% extends 'licenses/account/base.html' %}
 
-{% block title %}{% if is_new %}Создать токен{% else %}Продлить токен{% endif %} — ПВЗшник.рф{% endblock %}
+{% block title %}{% if is_new %}Создать токен{% else %}Продлить токен{% endif %} — {{ service_settings.service_name|default:"Magic ПВЗ" }}{% endblock %}
 
 {% block account_content %}
 <div class="account-page-head">

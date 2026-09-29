@@ -1,0 +1,58 @@
+{% extends 'licenses/account/base.html' %}
+
+{% block title %}{{ form_title }} — {{ service_settings.service_name|default:"Magic ПВЗ" }}{% endblock %}
+
+{% block account_content %}
+<div class="account-page-head">
+    <div>
+        <h1>{{ form_title }}</h1>
+        <p>Активные уведомления отображаются пользователям над содержимым кабинета.</p>
+    </div>
+    <a class="account-button account-button-outline" href="{% url 'service_notifications' %}">
+        <i data-lucide="arrow-left" aria-hidden="true"></i>
+        <span>К уведомлениям</span>
+    </a>
+</div>
+
+<section class="account-form-panel">
+    <form method="post" class="account-form">
+        {% csrf_token %}
+
+        {% if form.non_field_errors %}
+            <div class="account-message error">
+                <i data-lucide="circle-alert" aria-hidden="true"></i>
+                <div>
+                    <strong>Ошибка</strong>
+                    <span>{{ form.non_field_errors }}</span>
+                </div>
+                <span></span>
+            </div>
+        {% endif %}
+
+        <div class="account-field">
+            {{ form.title.label_tag }}
+            {{ form.title }}
+            {% for error in form.title.errors %}<span class="account-field-error">{{ error }}</span>{% endfor %}
+        </div>
+
+        <div class="account-field">
+            {{ form.text.label_tag }}
+            {{ form.text }}
+            {% for error in form.text.errors %}<span class="account-field-error">{{ error }}</span>{% endfor %}
+        </div>
+
+        <label class="account-checkbox-line">
+            {{ form.is_enabled }}
+            <span>{{ form.is_enabled.label }}</span>
+        </label>
+        {% for error in form.is_enabled.errors %}<span class="account-field-error">{{ error }}</span>{% endfor %}
+
+        <div class="account-actions">
+            <button class="account-button account-button-primary" type="submit">
+                <i data-lucide="save" aria-hidden="true"></i>
+                <span>{{ submit_label }}</span>
+            </button>
+        </div>
+    </form>
+</section>
+{% endblock %}

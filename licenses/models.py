@@ -4,6 +4,12 @@ from django.utils import timezone
 import uuid
 
 
+DEFAULT_CELL_SELECTORS = '\n'.join([
+    '[class="_shelfTag_1tkm1_2 ozi-heading-500 _shelfTag_jn3ur_21"]',
+    '[data-testid="logItemPlace"]',
+])
+
+
 class LicenseKey(models.Model):
     """Лицензионный ключ, привязанный к пользователю."""
     key = models.CharField(max_length=64, unique=True, default=uuid.uuid4)
@@ -84,12 +90,20 @@ class Payment(models.Model):
 class ServiceSettings(models.Model):
     """Настройки сервиса, которые редактирует суперпользователь."""
     singleton_id = models.PositiveSmallIntegerField(default=1, unique=True, editable=False)
+    service_name = models.CharField(max_length=120, default='Magic ПВЗ')
     company_name = models.CharField(max_length=255, blank=True)
     inn = models.CharField(max_length=32, blank=True)
     ogrnip = models.CharField(max_length=32, blank=True)
+    bank_name = models.CharField(max_length=255, blank=True)
+    bik = models.CharField(max_length=32, blank=True)
+    bank_account = models.CharField(max_length=64, blank=True)
     support_hours = models.CharField(max_length=120, blank=True)
     telegram_url = models.URLField(blank=True)
     whatsapp_url = models.URLField(blank=True)
+    max_url = models.URLField(blank=True)
+    support_email = models.EmailField(blank=True)
+    support_phone = models.CharField(max_length=64, blank=True)
+    cell_selectors = models.TextField(default=DEFAULT_CELL_SELECTORS, blank=True)
     notice_enabled = models.BooleanField(default=False)
     notice_title = models.CharField(max_length=160, blank=True)
     notice_text = models.TextField(blank=True)
@@ -100,9 +114,26 @@ class ServiceSettings(models.Model):
         verbose_name_plural = 'настройки сервиса'
 
     def __str__(self):
-        return 'Настройки сервиса'
+        return self.service_name or 'Magic ПВЗ'
 
     @classmethod
     def load(cls):
         obj, _ = cls.objects.get_or_create(singleton_id=1)
         return obj
+
+
+class ServiceNotification(models.Model):
+    """Важные уведомления, которые показываются в личном кабинете."""
+    title = models.CharField(max_length=160, blank=True)
+    text = models.TextField()
+    is_enabled = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ('-updated_at', '-created_at')
+        verbose_name = 'уведомление сервиса'
+        verbose_name_plural = 'уведомления сервиса'
+
+    def __str__(self):
+        return self.title or 'Важное уведомление'

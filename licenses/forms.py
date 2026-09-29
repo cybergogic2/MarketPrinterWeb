@@ -2,7 +2,7 @@ from django import forms
 from django.contrib.auth.models import User
 from django.contrib.auth.forms import UserCreationForm
 
-from .models import ServiceSettings
+from .models import ServiceNotification, ServiceSettings
 
 
 class RegisterForm(UserCreationForm):
@@ -50,35 +50,71 @@ class ServiceSettingsForm(forms.ModelForm):
     class Meta:
         model = ServiceSettings
         fields = (
+            'service_name',
             'company_name',
-            'inn',
             'ogrnip',
-            'support_hours',
+            'inn',
+            'bank_name',
+            'bik',
+            'bank_account',
             'telegram_url',
-            'whatsapp_url',
-            'notice_enabled',
-            'notice_title',
-            'notice_text',
+            'max_url',
+            'support_email',
+            'support_phone',
+            'cell_selectors',
         )
         labels = {
-            'company_name': 'Данные ИП',
-            'inn': 'ИНН',
+            'service_name': 'Название сервиса',
+            'company_name': 'ИП',
             'ogrnip': 'ОГРНИП',
-            'support_hours': 'Время поддержки',
-            'telegram_url': 'Ссылка на Telegram',
-            'whatsapp_url': 'Ссылка на WhatsApp',
-            'notice_enabled': 'Показывать важное уведомление',
-            'notice_title': 'Заголовок уведомления',
-            'notice_text': 'Текст уведомления',
+            'inn': 'ИНН',
+            'bank_name': 'Банк',
+            'bik': 'БИК',
+            'bank_account': 'Счёт',
+            'telegram_url': 'Telegram',
+            'max_url': 'MAX',
+            'support_email': 'E-mail',
+            'support_phone': 'Телефон',
+            'cell_selectors': 'Идентификаторы или классы ячейки',
+        }
+        help_texts = {
+            'cell_selectors': (
+                'Укажите CSS-селекторы по одному в строке. '
+                'Они попадут в конфиг браузерного расширения.'
+            ),
         }
         widgets = {
+            'service_name': forms.TextInput(attrs={'class': 'account-input'}),
             'company_name': forms.TextInput(attrs={'class': 'account-input'}),
-            'inn': forms.TextInput(attrs={'class': 'account-input'}),
             'ogrnip': forms.TextInput(attrs={'class': 'account-input'}),
-            'support_hours': forms.TextInput(attrs={'class': 'account-input'}),
+            'inn': forms.TextInput(attrs={'class': 'account-input'}),
+            'bank_name': forms.TextInput(attrs={'class': 'account-input'}),
+            'bik': forms.TextInput(attrs={'class': 'account-input'}),
+            'bank_account': forms.TextInput(attrs={'class': 'account-input'}),
             'telegram_url': forms.URLInput(attrs={'class': 'account-input'}),
-            'whatsapp_url': forms.URLInput(attrs={'class': 'account-input'}),
-            'notice_enabled': forms.CheckboxInput(attrs={'class': 'account-checkbox'}),
-            'notice_title': forms.TextInput(attrs={'class': 'account-input'}),
-            'notice_text': forms.Textarea(attrs={'class': 'account-input account-textarea', 'rows': 4}),
+            'max_url': forms.URLInput(attrs={'class': 'account-input'}),
+            'support_email': forms.EmailInput(attrs={'class': 'account-input'}),
+            'support_phone': forms.TextInput(attrs={'class': 'account-input'}),
+            'cell_selectors': forms.Textarea(attrs={
+                'class': 'account-input account-textarea account-code-textarea',
+                'rows': 5,
+            }),
+        }
+
+
+class ServiceNotificationForm(forms.ModelForm):
+    """Форма уведомления, доступная только суперпользователю."""
+
+    class Meta:
+        model = ServiceNotification
+        fields = ('title', 'text', 'is_enabled')
+        labels = {
+            'title': 'Заголовок',
+            'text': 'Текст уведомления',
+            'is_enabled': 'Показывать пользователям',
+        }
+        widgets = {
+            'title': forms.TextInput(attrs={'class': 'account-input'}),
+            'text': forms.Textarea(attrs={'class': 'account-input account-textarea', 'rows': 5}),
+            'is_enabled': forms.CheckboxInput(attrs={'class': 'account-checkbox'}),
         }

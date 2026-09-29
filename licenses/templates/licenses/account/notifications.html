@@ -1,0 +1,73 @@
+{% extends 'licenses/account/base.html' %}
+
+{% block title %}Уведомления — {{ service_settings.service_name|default:"Magic ПВЗ" }}{% endblock %}
+
+{% block account_content %}
+<div class="account-page-head">
+    <div>
+        <h1>Уведомления</h1>
+        <p>Эти блоки показываются пользователям над контентом личного кабинета.</p>
+    </div>
+    <a class="account-button account-button-primary" href="{% url 'notification_create' %}">
+        <i data-lucide="plus" aria-hidden="true"></i>
+        <span>Добавить уведомление</span>
+    </a>
+</div>
+
+{% if notifications %}
+    <div class="account-table-wrap">
+        <table class="account-table">
+            <thead>
+            <tr>
+                <th>Уведомление</th>
+                <th>Статус</th>
+                <th>Обновлено</th>
+                <th></th>
+            </tr>
+            </thead>
+            <tbody>
+            {% for notification in notifications %}
+                <tr>
+                    <td>
+                        <strong>{% if notification.title %}{{ notification.title }}{% else %}Важное уведомление{% endif %}</strong><br>
+                        <span class="account-muted">{{ notification.text|truncatechars:140 }}</span>
+                    </td>
+                    <td>
+                        {% if notification.is_enabled %}
+                            <span class="account-badge">Показывается</span>
+                        {% else %}
+                            <span class="account-badge account-badge-off">Отключено</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ notification.updated_at|date:"d.m.Y H:i" }}</td>
+                    <td>
+                        <div class="account-table-actions">
+                            <a class="account-icon-button" href="{% url 'notification_edit' notification.id %}" aria-label="Редактировать уведомление">
+                                <i data-lucide="pencil" aria-hidden="true"></i>
+                            </a>
+                            <form class="account-inline-form" method="post" action="{% url 'notification_toggle' notification.id %}">
+                                {% csrf_token %}
+                                <button class="account-icon-button" type="submit" aria-label="{% if notification.is_enabled %}Отключить уведомление{% else %}Включить уведомление{% endif %}">
+                                    <i data-lucide="{% if notification.is_enabled %}eye-off{% else %}eye{% endif %}" aria-hidden="true"></i>
+                                </button>
+                            </form>
+                            <a class="account-icon-button" href="{% url 'notification_delete' notification.id %}" aria-label="Удалить уведомление">
+                                <i data-lucide="trash-2" aria-hidden="true"></i>
+                            </a>
+                        </div>
+                    </td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% else %}
+    <section class="account-empty">
+        <p>Уведомлений пока нет.</p>
+        <a class="account-button account-button-primary" href="{% url 'notification_create' %}">
+            <i data-lucide="plus" aria-hidden="true"></i>
+            <span>Добавить первое уведомление</span>
+        </a>
+    </section>
+{% endif %}
+{% endblock %}

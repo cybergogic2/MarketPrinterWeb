@@ -9,16 +9,24 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.core.exceptions import PermissionDenied
 from django.db.models import Q
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
 from django.urls import reverse
+from django.views.decorators.http import require_POST
 from datetime import timedelta
 
 from django.contrib.auth import login
-from .forms import RegisterForm, ServiceSettingsForm
+from .forms import RegisterForm, ServiceNotificationForm, ServiceSettingsForm
 
 from drf_spectacular.utils import extend_schema, OpenApiResponse, OpenApiExample
 
-from .models import LicenseKey, Activation, Payment, ServiceSettings
+from .models import (
+    DEFAULT_CELL_SELECTORS,
+    LicenseKey,
+    Activation,
+    Payment,
+    ServiceNotification,
+    ServiceSettings,
+)
 from .serializers import (
     ActivationRequestSerializer,
     CheckRequestSerializer,
@@ -266,23 +274,42 @@ class CreateLicenseView(APIView):
 # ЛИЧНЫЙ КАБИНЕТ
 # ============================================================
 
+def ensure_superuser(user):
+    if not user.is_superuser:
+        raise PermissionDenied
+
+
+def parse_cell_selectors(selectors_text):
+    selectors = [
+        line.strip()
+        for line in (selectors_text or '').splitlines()
+        if line.strip()
+    ]
+    if selectors:
+        return selectors[:20]
+    return [
+        line.strip()
+        for line in DEFAULT_CELL_SELECTORS.splitlines()
+        if line.strip()
+    ]
+
+
 def account_context(request, **extra):
     service_settings = ServiceSettings.load()
     active_tokens_count = request.user.licenses.filter(is_active=True).filter(
         Q(expires_at__isnull=True) | Q(expires_at__gt=timezone.now())
     ).count()
     download_path = reverse('download')
+    notifications = ServiceNotification.objects.filter(
+        is_enabled=True,
+    ).exclude(text='').order_by('-updated_at', '-created_at')
     context = {
         'service_settings': service_settings,
         'account_balance': 0,
         'active_tokens_count': active_tokens_count,
         'download_url': download_path,
         'download_qr_url': reverse('download_qr'),
-        'account_notice': (
-            service_settings
-            if service_settings.notice_enabled and service_settings.notice_text
-            else None
-        ),
+        'account_notifications': notifications,
     }
     context.update(extra)
     return context
@@ -385,15 +412,14 @@ def deactivate_license(request, key_id):
 @login_required
 def service_settings(request):
     """Настройки сервиса для суперпользователя."""
-    if not request.user.is_superuser:
-        raise PermissionDenied
+    ensure_superuser(request.user)
 
     settings_obj = ServiceSettings.load()
     if request.method == 'POST':
         form = ServiceSettingsForm(request.POST, instance=settings_obj)
         if form.is_valid():
             form.save()
-            messages.success(request, 'Настройки сервиса сохранены.')
+            messages.success(request, 'Настройки сохранены.')
             return redirect('service_settings')
     else:
         form = ServiceSettingsForm(instance=settings_obj)
@@ -403,6 +429,113 @@ def service_settings(request):
         form=form,
         account_nav='settings',
     ))
+
+
+@login_required
+def service_notifications(request):
+    """Список уведомлений сервиса для суперпользователя."""
+    ensure_superuser(request.user)
+    notifications = ServiceNotification.objects.all()
+    return render(request, 'licenses/account/notifications.html', account_context(
+        request,
+        notifications=notifications,
+        account_nav='notifications',
+    ))
+
+
+@login_required
+def notification_create(request):
+    """Создание уведомления сервиса."""
+    ensure_superuser(request.user)
+    if request.method == 'POST':
+        form = ServiceNotificationForm(request.POST)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Уведомление добавлено.')
+            return redirect('service_notifications')
+    else:
+        form = ServiceNotificationForm(initial={'is_enabled': True})
+
+    return render(request, 'licenses/account/notification_form.html', account_context(
+        request,
+        form=form,
+        form_title='Новое уведомление',
+        submit_label='Добавить уведомление',
+        account_nav='notifications',
+    ))
+
+
+@login_required
+def notification_edit(request, notification_id):
+    """Редактирование уведомления сервиса."""
+    ensure_superuser(request.user)
+    notification = get_object_or_404(ServiceNotification, id=notification_id)
+    if request.method == 'POST':
+        form = ServiceNotificationForm(request.POST, instance=notification)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Уведомление сохранено.')
+            return redirect('service_notifications')
+    else:
+        form = ServiceNotificationForm(instance=notification)
+
+    return render(request, 'licenses/account/notification_form.html', account_context(
+        request,
+        form=form,
+        notification=notification,
+        form_title='Редактировать уведомление',
+        submit_label='Сохранить уведомление',
+        account_nav='notifications',
+    ))
+
+
+@login_required
+def notification_delete(request, notification_id):
+    """Удаление уведомления сервиса."""
+    ensure_superuser(request.user)
+    notification = get_object_or_404(ServiceNotification, id=notification_id)
+    if request.method == 'POST':
+        notification.delete()
+        messages.success(request, 'Уведомление удалено.')
+        return redirect('service_notifications')
+
+    return render(request, 'licenses/account/notification_confirm_delete.html', account_context(
+        request,
+        notification=notification,
+        account_nav='notifications',
+    ))
+
+
+@login_required
+@require_POST
+def notification_toggle(request, notification_id):
+    """Включение или выключение уведомления сервиса."""
+    ensure_superuser(request.user)
+    notification = get_object_or_404(ServiceNotification, id=notification_id)
+    notification.is_enabled = not notification.is_enabled
+    notification.save(update_fields=['is_enabled', 'updated_at'])
+    messages.success(
+        request,
+        'Уведомление включено.' if notification.is_enabled else 'Уведомление отключено.'
+    )
+    return redirect('service_notifications')
+
+
+def extension_config(request):
+    """Конфиг браузерного расширения, управляемый из настроек сервиса."""
+    settings_obj = ServiceSettings.load()
+    return JsonResponse({
+        'version': 1,
+        'ttlSeconds': 21600,
+        'serviceName': settings_obj.service_name or 'Magic ПВЗ',
+        'minExtensionVersion': '0.1.0',
+        'latestVersion': '0.1.0',
+        'updateMessage': '',
+        'printUrl': 'http://localhost:80/Integration/HTTPLabelPrint/Execute',
+        'minCellToPrint': 1,
+        'hotkey': 'Pause',
+        'selectors': parse_cell_selectors(settings_obj.cell_selectors),
+    })
 
 
 @login_required

@@ -1,9 +1,10 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}Личный кабинет — ПВЗшник.рф{% endblock %}</title>
+    <title>{% block title %}Личный кабинет — {{ service_settings.service_name|default:"Magic ПВЗ" }}{% endblock %}</title>
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
         :root {
@@ -69,12 +70,10 @@
         .account-brand-mark {
             width: 38px;
             height: 38px;
-            display: grid;
-            place-items: center;
             flex: 0 0 auto;
-            color: #ffffff;
+            display: block;
             border-radius: 8px;
-            background: linear-gradient(145deg, #1769f6, #13a371);
+            object-fit: cover;
         }
 
         .account-brand-title {
@@ -510,7 +509,7 @@
         }
 
         .account-form-panel {
-            max-width: 720px;
+            max-width: 920px;
             padding: 22px;
         }
 
@@ -552,6 +551,40 @@
             resize: vertical;
         }
 
+        .account-code-textarea {
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+            font-size: 13px;
+        }
+
+        .account-settings-grid {
+            display: grid;
+            gap: 18px;
+        }
+
+        .account-settings-block {
+            padding: 18px;
+            background: var(--account-panel-soft);
+            border: 1px solid var(--account-subtle);
+            border-radius: 8px;
+        }
+
+        .account-settings-block h2 {
+            margin: 0 0 14px;
+            font-size: 16px;
+            line-height: 1.25;
+            font-weight: 600;
+        }
+
+        .account-field-full {
+            grid-column: 1 / -1;
+        }
+
+        .account-help {
+            color: var(--account-muted);
+            font-size: 12px;
+            line-height: 1.45;
+        }
+
         .account-checkbox-line {
             display: flex;
             align-items: center;
@@ -568,6 +601,40 @@
         .account-field-error {
             color: var(--account-red);
             font-size: 13px;
+        }
+
+        .account-muted {
+            color: var(--account-muted);
+        }
+
+        .account-badge {
+            display: inline-flex;
+            align-items: center;
+            min-height: 26px;
+            padding: 0 9px;
+            border-radius: 999px;
+            color: #0f6f45;
+            background: #e9f8ef;
+            font-size: 12px;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        .account-badge-off {
+            color: #8a5a00;
+            background: #fff3d2;
+        }
+
+        .account-table-actions {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: flex-end;
+            gap: 8px;
+        }
+
+        .account-inline-form {
+            display: inline-flex;
+            margin: 0;
         }
 
         .account-pricing {
@@ -703,9 +770,9 @@
 <div class="account-shell">
     <aside class="account-sidebar">
         <a href="{% url 'account_dashboard' %}" class="account-brand">
-            <span class="account-brand-mark" aria-hidden="true"><i data-lucide="printer-check"></i></span>
+            <img class="account-brand-mark" src="{% static 'licenses/img/extension-logo.svg' %}" alt="">
             <span class="account-brand-title">
-                <strong>ПВЗшник.рф</strong>
+                <strong>{{ service_settings.service_name|default:"Magic ПВЗ" }}</strong>
                 <span>Личный кабинет</span>
             </span>
         </a>
@@ -731,7 +798,11 @@
                 <nav class="account-nav" aria-label="Админ-разделы">
                     <a href="{% url 'service_settings' %}" class="{% if account_nav == 'settings' %}is-active{% endif %}">
                         <i data-lucide="settings" aria-hidden="true"></i>
-                        <span>Настройки сервиса</span>
+                        <span>Настройки</span>
+                    </a>
+                    <a href="{% url 'service_notifications' %}" class="{% if account_nav == 'notifications' %}is-active{% endif %}">
+                        <i data-lucide="bell" aria-hidden="true"></i>
+                        <span>Уведомления</span>
                     </a>
                     <a href="{% url 'admin:index' %}">
                         <i data-lucide="shield" aria-hidden="true"></i>
@@ -741,7 +812,7 @@
             </section>
         {% endif %}
 
-        {% if service_settings.telegram_url or service_settings.whatsapp_url %}
+        {% if service_settings.telegram_url or service_settings.max_url or service_settings.support_email or service_settings.support_phone %}
             <section class="account-section">
                 <p class="account-section-label">Связаться с поддержкой</p>
                 <div class="account-messengers">
@@ -751,22 +822,36 @@
                             <span>Telegram</span>
                         </a>
                     {% endif %}
-                    {% if service_settings.whatsapp_url %}
-                        <a href="{{ service_settings.whatsapp_url }}" target="_blank" rel="noopener">
+                    {% if service_settings.max_url %}
+                        <a href="{{ service_settings.max_url }}" target="_blank" rel="noopener">
                             <i data-lucide="message-circle" aria-hidden="true"></i>
-                            <span>WhatsApp</span>
+                            <span>MAX</span>
+                        </a>
+                    {% endif %}
+                    {% if service_settings.support_email %}
+                        <a href="mailto:{{ service_settings.support_email }}">
+                            <i data-lucide="mail" aria-hidden="true"></i>
+                            <span>E-mail</span>
+                        </a>
+                    {% endif %}
+                    {% if service_settings.support_phone %}
+                        <a href="tel:{{ service_settings.support_phone }}">
+                            <i data-lucide="phone" aria-hidden="true"></i>
+                            <span>Телефон</span>
                         </a>
                     {% endif %}
                 </div>
             </section>
         {% endif %}
 
-        {% if service_settings.company_name or service_settings.inn or service_settings.ogrnip or service_settings.support_hours %}
+        {% if service_settings.company_name or service_settings.ogrnip or service_settings.inn or service_settings.bank_name or service_settings.bik or service_settings.bank_account %}
             <section class="account-company">
                 {% if service_settings.company_name %}<strong>{{ service_settings.company_name }}</strong>{% endif %}
-                {% if service_settings.inn %}ИНН {{ service_settings.inn }}<br>{% endif %}
                 {% if service_settings.ogrnip %}ОГРНИП {{ service_settings.ogrnip }}<br>{% endif %}
-                {% if service_settings.support_hours %}Поддержка: {{ service_settings.support_hours }}{% endif %}
+                {% if service_settings.inn %}ИНН {{ service_settings.inn }}<br>{% endif %}
+                {% if service_settings.bank_name %}Банк: {{ service_settings.bank_name }}<br>{% endif %}
+                {% if service_settings.bik %}БИК {{ service_settings.bik }}<br>{% endif %}
+                {% if service_settings.bank_account %}Счёт {{ service_settings.bank_account }}{% endif %}
             </section>
         {% endif %}
 
@@ -806,18 +891,18 @@
         </header>
 
         <div class="account-content">
-            {% if account_notice %}
-                <section class="account-notice" data-dismissible-notice data-notice-id="notice-{{ account_notice.updated_at|date:'U' }}">
+            {% for notification in account_notifications %}
+                <section class="account-notice" data-dismissible-notice data-notice-id="notice-{{ notification.id }}-{{ notification.updated_at|date:'U' }}">
                     <i data-lucide="triangle-alert" aria-hidden="true"></i>
                     <div>
-                        <strong>{% if account_notice.notice_title %}{{ account_notice.notice_title }}{% else %}Важное уведомление{% endif %}</strong>
-                        <span>{{ account_notice.notice_text }}</span>
+                        <strong>{% if notification.title %}{{ notification.title }}{% else %}Важное уведомление{% endif %}</strong>
+                        <span>{{ notification.text }}</span>
                     </div>
                     <button class="account-close" type="button" aria-label="Закрыть уведомление" data-close-notice>
                         <i data-lucide="x" aria-hidden="true"></i>
                     </button>
                 </section>
-            {% endif %}
+            {% endfor %}
 
             {% if messages %}
                 {% for message in messages %}

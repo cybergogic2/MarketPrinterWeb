@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import LicenseKey, Activation, ServiceSettings
+from .models import LicenseKey, Activation, ServiceNotification, ServiceSettings
 
 
 @admin.register(LicenseKey)
@@ -17,4 +17,11 @@ class ActivationAdmin(admin.ModelAdmin):
 
 @admin.register(ServiceSettings)
 class ServiceSettingsAdmin(admin.ModelAdmin):
-    list_display = ('company_name', 'telegram_url', 'whatsapp_url', 'notice_enabled', 'updated_at')
+    list_display = ('service_name', 'company_name', 'telegram_url', 'max_url', 'updated_at')
+
+
+@admin.register(ServiceNotification)
+class ServiceNotificationAdmin(admin.ModelAdmin):
+    list_display = ('title', 'is_enabled', 'updated_at')
+    list_filter = ('is_enabled',)
+    search_fields = ('title', 'text')
