@@ -104,8 +104,8 @@ class ServiceSettingsForm(forms.ModelForm):
             'token_price': forms.NumberInput(attrs={
                 'class': 'account-input',
                 'min': '0',
-                'step': '0.01',
-                'inputmode': 'decimal',
+                'step': '1',
+                'inputmode': 'numeric',
             }),
             'company_name': forms.TextInput(attrs={'class': 'account-input'}),
             'ogrnip': forms.TextInput(attrs={'class': 'account-input'}),
