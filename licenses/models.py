@@ -79,3 +79,30 @@ class Payment(models.Model):
 
     def __str__(self):
         return f"Платёж {self.id} — {self.amount}₽ ({self.status})"
+
+
+class ServiceSettings(models.Model):
+    """Настройки сервиса, которые редактирует суперпользователь."""
+    singleton_id = models.PositiveSmallIntegerField(default=1, unique=True, editable=False)
+    company_name = models.CharField(max_length=255, blank=True)
+    inn = models.CharField(max_length=32, blank=True)
+    ogrnip = models.CharField(max_length=32, blank=True)
+    support_hours = models.CharField(max_length=120, blank=True)
+    telegram_url = models.URLField(blank=True)
+    whatsapp_url = models.URLField(blank=True)
+    notice_enabled = models.BooleanField(default=False)
+    notice_title = models.CharField(max_length=160, blank=True)
+    notice_text = models.TextField(blank=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = 'настройки сервиса'
+        verbose_name_plural = 'настройки сервиса'
+
+    def __str__(self):
+        return 'Настройки сервиса'
+
+    @classmethod
+    def load(cls):
+        obj, _ = cls.objects.get_or_create(singleton_id=1)
+        return obj

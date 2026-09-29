@@ -1,0 +1,862 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Личный кабинет — ПВЗшник.рф{% endblock %}</title>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        :root {
+            --account-bg: #eef2f7;
+            --account-sidebar: #ffffff;
+            --account-panel: #ffffff;
+            --account-panel-soft: #f8fafc;
+            --account-text: #172033;
+            --account-muted: #657083;
+            --account-subtle: #dbe3ef;
+            --account-blue: #1769f6;
+            --account-blue-hover: #075ee7;
+            --account-green: #138a55;
+            --account-yellow-bg: #fff7df;
+            --account-yellow-border: #f0d98c;
+            --account-yellow-text: #71510a;
+            --account-red: #dc3545;
+            --account-red-hover: #bf2d3b;
+            --account-shadow: 0 18px 60px rgba(39, 54, 83, .14);
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            background: var(--account-bg);
+            color: var(--account-text);
+            font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        }
+
+        a {
+            color: inherit;
+        }
+
+        .account-shell {
+            min-height: 100vh;
+            display: grid;
+            grid-template-columns: 212px minmax(0, 1fr);
+            background: var(--account-bg);
+        }
+
+        .account-sidebar {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            gap: 22px;
+            padding: 20px 14px;
+            background: var(--account-sidebar);
+            border-right: 1px solid var(--account-subtle);
+        }
+
+        .account-brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            min-width: 0;
+            text-decoration: none;
+        }
+
+        .account-brand-mark {
+            width: 38px;
+            height: 38px;
+            display: grid;
+            place-items: center;
+            flex: 0 0 auto;
+            color: #ffffff;
+            border-radius: 8px;
+            background: linear-gradient(145deg, #1769f6, #13a371);
+        }
+
+        .account-brand-title {
+            min-width: 0;
+        }
+
+        .account-brand-title strong {
+            display: block;
+            overflow: hidden;
+            font-size: 17px;
+            font-weight: 600;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .account-brand-title span {
+            display: block;
+            margin-top: 2px;
+            color: var(--account-muted);
+            font-size: 12px;
+        }
+
+        .account-nav,
+        .account-messengers {
+            display: grid;
+            gap: 4px;
+        }
+
+        .account-nav a,
+        .account-messengers a {
+            min-height: 42px;
+            display: flex;
+            align-items: center;
+            gap: 11px;
+            padding: 0 12px;
+            color: var(--account-muted);
+            text-decoration: none;
+            border-radius: 7px;
+            font-size: 14px;
+        }
+
+        .account-nav a.is-active {
+            color: #ffffff;
+            background: var(--account-blue);
+        }
+
+        .account-nav a:not(.is-active):hover,
+        .account-messengers a:hover {
+            color: var(--account-text);
+            background: var(--account-panel-soft);
+        }
+
+        .account-section {
+            padding-top: 18px;
+            border-top: 1px solid var(--account-subtle);
+        }
+
+        .account-section-label {
+            margin: 0 0 10px;
+            color: var(--account-muted);
+            font-size: 12px;
+        }
+
+        .account-company {
+            padding-top: 18px;
+            border-top: 1px solid var(--account-subtle);
+            color: var(--account-muted);
+            font-size: 12px;
+            line-height: 1.55;
+        }
+
+        .account-company strong {
+            display: block;
+            margin-bottom: 6px;
+            color: var(--account-text);
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .account-userline {
+            margin-top: auto;
+            padding-top: 18px;
+            border-top: 1px solid var(--account-subtle);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+        }
+
+        .account-user-email {
+            min-width: 0;
+            overflow: hidden;
+            color: var(--account-muted);
+            font-size: 13px;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .account-icon-button,
+        .account-close,
+        .account-token-action,
+        .account-button {
+            min-height: 36px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 0 13px;
+            border: 1px solid transparent;
+            border-radius: 7px;
+            color: var(--account-text);
+            background: var(--account-panel-soft);
+            cursor: pointer;
+            font: inherit;
+            font-size: 13px;
+            font-weight: 600;
+            text-decoration: none;
+            white-space: nowrap;
+        }
+
+        .account-icon-button {
+            width: 36px;
+            min-width: 36px;
+            padding: 0;
+        }
+
+        .account-button-primary {
+            color: #ffffff;
+            background: var(--account-blue);
+        }
+
+        .account-button-primary:hover {
+            background: var(--account-blue-hover);
+        }
+
+        .account-button-danger {
+            color: #ffffff;
+            background: var(--account-red);
+        }
+
+        .account-button-danger:hover {
+            background: var(--account-red-hover);
+        }
+
+        .account-button-outline {
+            border-color: var(--account-subtle);
+            background: var(--account-panel);
+        }
+
+        .account-main {
+            min-width: 0;
+        }
+
+        .account-topbar {
+            display: grid;
+            grid-template-columns: minmax(190px, .75fr) minmax(280px, 1fr);
+            gap: 18px;
+            align-items: center;
+            padding: 18px 22px;
+            background: var(--account-panel);
+            border-bottom: 1px solid var(--account-subtle);
+        }
+
+        .account-balance-line {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+            font-size: 15px;
+        }
+
+        .account-balance-line b {
+            font-size: 18px;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        .account-active-tokens {
+            margin-top: 8px;
+            color: var(--account-muted);
+            font-size: 13px;
+        }
+
+        .account-download {
+            min-width: 0;
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) 68px;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .account-download a {
+            color: var(--account-blue-hover);
+            font-size: 14px;
+            font-weight: 600;
+            text-decoration: none;
+        }
+
+        .account-download small {
+            display: block;
+            margin-top: 5px;
+            color: var(--account-muted);
+            font-size: 12px;
+        }
+
+        .account-qr {
+            width: 68px;
+            aspect-ratio: 1;
+            padding: 7px;
+            border: 1px solid var(--account-subtle);
+            border-radius: 6px;
+            background: #ffffff;
+        }
+
+        .account-qr img {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+
+        .account-content {
+            padding: 20px 22px 30px;
+        }
+
+        .account-notice,
+        .account-message {
+            display: grid;
+            grid-template-columns: 22px minmax(0, 1fr) 36px;
+            gap: 12px;
+            align-items: start;
+            margin-bottom: 16px;
+            padding: 16px 14px 16px 16px;
+            color: var(--account-yellow-text);
+            background: var(--account-yellow-bg);
+            border: 1px solid var(--account-yellow-border);
+            border-radius: 8px;
+        }
+
+        .account-notice.is-hidden {
+            display: none;
+        }
+
+        .account-notice strong,
+        .account-message strong {
+            display: block;
+            margin-bottom: 3px;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .account-notice span,
+        .account-message span {
+            display: block;
+            font-size: 13px;
+            line-height: 1.45;
+        }
+
+        .account-message.success {
+            color: #0f6f45;
+            background: #e9f8ef;
+            border-color: #bce8cd;
+        }
+
+        .account-message.error {
+            color: #9d2030;
+            background: #fff0f2;
+            border-color: #f2b8c0;
+        }
+
+        .account-close {
+            width: 32px;
+            min-height: 32px;
+            padding: 0;
+            color: currentColor;
+            background: transparent;
+            border: 0;
+        }
+
+        .account-page-head {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 16px;
+            margin-bottom: 16px;
+        }
+
+        .account-page-head h1 {
+            margin: 0;
+            font-size: 23px;
+            line-height: 1.2;
+            font-weight: 600;
+        }
+
+        .account-page-head p {
+            margin: 7px 0 0;
+            color: var(--account-muted);
+            font-size: 14px;
+        }
+
+        .account-card,
+        .account-empty,
+        .account-form-panel {
+            background: var(--account-panel);
+            border: 1px solid var(--account-subtle);
+            border-radius: 8px;
+        }
+
+        .account-empty {
+            padding: 48px 20px;
+            text-align: center;
+        }
+
+        .account-empty p {
+            margin: 0 0 16px;
+            color: var(--account-muted);
+        }
+
+        .account-token-list {
+            display: grid;
+            gap: 10px;
+        }
+
+        .account-token-row {
+            display: grid;
+            grid-template-columns: minmax(160px, 1fr) 106px 116px 210px;
+            gap: 10px;
+            align-items: center;
+            padding: 15px 16px;
+        }
+
+        .account-token-title {
+            min-width: 0;
+            display: grid;
+            gap: 5px;
+        }
+
+        .account-token-title strong {
+            overflow: hidden;
+            font-size: 14px;
+            font-weight: 600;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .account-token-key {
+            overflow: hidden;
+            color: var(--account-muted);
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+            font-size: 13px;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .account-status {
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            font-size: 13px;
+            white-space: nowrap;
+        }
+
+        .account-status::before {
+            content: "";
+            width: 8px;
+            height: 8px;
+            border-radius: 999px;
+            background: currentColor;
+        }
+
+        .account-status-active {
+            color: var(--account-green);
+        }
+
+        .account-status-pending {
+            color: #a66b00;
+        }
+
+        .account-status-expired,
+        .account-status-deactivated {
+            color: var(--account-red);
+        }
+
+        .account-date {
+            color: var(--account-muted);
+            font-size: 13px;
+            white-space: nowrap;
+        }
+
+        .account-token-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 8px;
+        }
+
+        .account-summary-line {
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+            margin-top: 14px;
+            color: var(--account-muted);
+            font-size: 13px;
+        }
+
+        .account-table-wrap {
+            overflow-x: auto;
+            background: var(--account-panel);
+            border: 1px solid var(--account-subtle);
+            border-radius: 8px;
+        }
+
+        .account-table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 560px;
+            font-size: 14px;
+        }
+
+        .account-table th,
+        .account-table td {
+            padding: 14px 16px;
+            border-bottom: 1px solid var(--account-subtle);
+            text-align: left;
+        }
+
+        .account-table th {
+            color: var(--account-muted);
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .account-table tr:last-child td {
+            border-bottom: 0;
+        }
+
+        .account-form-panel {
+            max-width: 720px;
+            padding: 22px;
+        }
+
+        .account-form {
+            display: grid;
+            gap: 16px;
+        }
+
+        .account-form-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 16px;
+        }
+
+        .account-field {
+            display: grid;
+            gap: 7px;
+        }
+
+        .account-field label {
+            color: var(--account-muted);
+            font-size: 13px;
+        }
+
+        .account-input {
+            width: 100%;
+            min-height: 42px;
+            padding: 9px 11px;
+            border: 1px solid var(--account-subtle);
+            border-radius: 7px;
+            color: var(--account-text);
+            background: var(--account-panel);
+            font: inherit;
+            font-size: 14px;
+        }
+
+        .account-textarea {
+            min-height: 112px;
+            resize: vertical;
+        }
+
+        .account-checkbox-line {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: var(--account-text);
+            font-size: 14px;
+        }
+
+        .account-checkbox {
+            width: 18px;
+            height: 18px;
+        }
+
+        .account-field-error {
+            color: var(--account-red);
+            font-size: 13px;
+        }
+
+        .account-pricing {
+            max-width: 680px;
+            display: grid;
+            gap: 10px;
+        }
+
+        .account-pricing-option {
+            display: block;
+            padding: 16px;
+            cursor: pointer;
+        }
+
+        .account-pricing-option-inner {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 14px;
+        }
+
+        .account-pricing-label {
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .account-pricing-option input {
+            width: 18px;
+            height: 18px;
+            margin: 0;
+        }
+
+        .account-price {
+            font-size: 18px;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        .account-note {
+            margin: 14px 0 0;
+            color: var(--account-muted);
+            font-size: 13px;
+            line-height: 1.5;
+        }
+
+        .account-confirm {
+            max-width: 520px;
+            padding: 28px;
+            text-align: center;
+        }
+
+        .account-confirm h1 {
+            margin: 0 0 12px;
+            font-size: 23px;
+        }
+
+        .account-confirm p {
+            color: var(--account-muted);
+            line-height: 1.5;
+        }
+
+        .account-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .account-actions-center {
+            justify-content: center;
+        }
+
+        [data-lucide] {
+            width: 18px;
+            height: 18px;
+            flex: 0 0 auto;
+        }
+
+        @media (max-width: 780px) {
+            .account-shell {
+                grid-template-columns: 1fr;
+            }
+
+            .account-sidebar {
+                min-height: auto;
+            }
+
+            .account-nav,
+            .account-messengers {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+
+            .account-topbar {
+                grid-template-columns: 1fr;
+            }
+
+            .account-token-row {
+                grid-template-columns: minmax(0, 1fr) 130px;
+            }
+
+            .account-token-actions {
+                justify-content: flex-start;
+            }
+        }
+
+        @media (max-width: 520px) {
+            .account-nav,
+            .account-messengers,
+            .account-download,
+            .account-token-row,
+            .account-form-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .account-topbar,
+            .account-content {
+                padding-left: 16px;
+                padding-right: 16px;
+            }
+
+            .account-page-head {
+                flex-direction: column;
+            }
+
+            .account-qr {
+                width: 96px;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="account-shell">
+    <aside class="account-sidebar">
+        <a href="{% url 'account_dashboard' %}" class="account-brand">
+            <span class="account-brand-mark" aria-hidden="true"><i data-lucide="printer-check"></i></span>
+            <span class="account-brand-title">
+                <strong>ПВЗшник.рф</strong>
+                <span>Личный кабинет</span>
+            </span>
+        </a>
+
+        <nav class="account-nav" aria-label="Разделы личного кабинета">
+            <a href="{% url 'account_dashboard' %}" class="{% if account_nav == 'tokens' %}is-active{% endif %}">
+                <i data-lucide="key-round" aria-hidden="true"></i>
+                <span>Токены</span>
+            </a>
+            <a href="{% url 'payment_history' %}" class="{% if account_nav == 'payments' %}is-active{% endif %}">
+                <i data-lucide="credit-card" aria-hidden="true"></i>
+                <span>Платежи</span>
+            </a>
+            <a href="{{ download_url }}">
+                <i data-lucide="download" aria-hidden="true"></i>
+                <span>Программа</span>
+            </a>
+        </nav>
+
+        {% if request.user.is_superuser %}
+            <section class="account-section">
+                <p class="account-section-label">Админ</p>
+                <nav class="account-nav" aria-label="Админ-разделы">
+                    <a href="{% url 'service_settings' %}" class="{% if account_nav == 'settings' %}is-active{% endif %}">
+                        <i data-lucide="settings" aria-hidden="true"></i>
+                        <span>Настройки сервиса</span>
+                    </a>
+                    <a href="{% url 'admin:index' %}">
+                        <i data-lucide="shield" aria-hidden="true"></i>
+                        <span>Админ-панель</span>
+                    </a>
+                </nav>
+            </section>
+        {% endif %}
+
+        {% if service_settings.telegram_url or service_settings.whatsapp_url %}
+            <section class="account-section">
+                <p class="account-section-label">Связаться с поддержкой</p>
+                <div class="account-messengers">
+                    {% if service_settings.telegram_url %}
+                        <a href="{{ service_settings.telegram_url }}" target="_blank" rel="noopener">
+                            <i data-lucide="send" aria-hidden="true"></i>
+                            <span>Telegram</span>
+                        </a>
+                    {% endif %}
+                    {% if service_settings.whatsapp_url %}
+                        <a href="{{ service_settings.whatsapp_url }}" target="_blank" rel="noopener">
+                            <i data-lucide="message-circle" aria-hidden="true"></i>
+                            <span>WhatsApp</span>
+                        </a>
+                    {% endif %}
+                </div>
+            </section>
+        {% endif %}
+
+        {% if service_settings.company_name or service_settings.inn or service_settings.ogrnip or service_settings.support_hours %}
+            <section class="account-company">
+                {% if service_settings.company_name %}<strong>{{ service_settings.company_name }}</strong>{% endif %}
+                {% if service_settings.inn %}ИНН {{ service_settings.inn }}<br>{% endif %}
+                {% if service_settings.ogrnip %}ОГРНИП {{ service_settings.ogrnip }}<br>{% endif %}
+                {% if service_settings.support_hours %}Поддержка: {{ service_settings.support_hours }}{% endif %}
+            </section>
+        {% endif %}
+
+        <div class="account-userline">
+            <span class="account-user-email">
+                {% if request.user.email %}{{ request.user.email }}{% else %}{{ request.user.username }}{% endif %}
+            </span>
+            <form method="post" action="{% url 'logout' %}">
+                {% csrf_token %}
+                <button class="account-icon-button" type="submit" aria-label="Выйти">
+                    <i data-lucide="log-out" aria-hidden="true"></i>
+                </button>
+            </form>
+        </div>
+    </aside>
+
+    <main class="account-main">
+        <header class="account-topbar">
+            <div>
+                <div class="account-balance-line">
+                    <span>Баланс:</span>
+                    <b>{{ account_balance }} руб</b>
+                    <a class="account-button account-button-danger" href="{% url 'buy_new_license' %}">Пополнить</a>
+                </div>
+                <div class="account-active-tokens">У вас активно {{ active_tokens_count }} токенов</div>
+            </div>
+
+            <div class="account-download">
+                <div>
+                    <a href="{{ download_url }}">Скачать последнюю версию программы</a>
+                    <small>QR-code для скачивания программы</small>
+                </div>
+                <a class="account-qr" href="{{ download_url }}" aria-label="Скачать программу по QR-code">
+                    <img src="{{ download_qr_url }}" alt="QR-code для скачивания программы">
+                </a>
+            </div>
+        </header>
+
+        <div class="account-content">
+            {% if account_notice %}
+                <section class="account-notice" data-dismissible-notice data-notice-id="notice-{{ account_notice.updated_at|date:'U' }}">
+                    <i data-lucide="triangle-alert" aria-hidden="true"></i>
+                    <div>
+                        <strong>{% if account_notice.notice_title %}{{ account_notice.notice_title }}{% else %}Важное уведомление{% endif %}</strong>
+                        <span>{{ account_notice.notice_text }}</span>
+                    </div>
+                    <button class="account-close" type="button" aria-label="Закрыть уведомление" data-close-notice>
+                        <i data-lucide="x" aria-hidden="true"></i>
+                    </button>
+                </section>
+            {% endif %}
+
+            {% if messages %}
+                {% for message in messages %}
+                    <section class="account-message {{ message.tags }}">
+                        <i data-lucide="{% if message.tags == 'success' %}check-circle{% elif message.tags == 'error' %}circle-alert{% else %}info{% endif %}" aria-hidden="true"></i>
+                        <div>
+                            <strong>{% if message.tags == 'success' %}Готово{% elif message.tags == 'error' %}Ошибка{% else %}Сообщение{% endif %}</strong>
+                            <span>{{ message }}</span>
+                        </div>
+                        <span></span>
+                    </section>
+                {% endfor %}
+            {% endif %}
+
+            {% block account_content %}{% endblock %}
+        </div>
+    </main>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        document.querySelectorAll('[data-dismissible-notice]').forEach(function (notice) {
+            var noticeId = notice.getAttribute('data-notice-id');
+            var storageKey = 'account-notice:' + noticeId;
+            if (window.localStorage.getItem(storageKey) === 'closed') {
+                notice.classList.add('is-hidden');
+            }
+            var close = notice.querySelector('[data-close-notice]');
+            if (close) {
+                close.addEventListener('click', function () {
+                    notice.classList.add('is-hidden');
+                    window.localStorage.setItem(storageKey, 'closed');
+                });
+            }
+        });
+        if (window.lucide) {
+            window.lucide.createIcons();
+        }
+    });
+</script>
+</body>
+</html>

@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import LicenseKey, Activation
+from .models import LicenseKey, Activation, ServiceSettings
 
 
 @admin.register(LicenseKey)
@@ -13,3 +13,8 @@ class LicenseKeyAdmin(admin.ModelAdmin):
 class ActivationAdmin(admin.ModelAdmin):
     list_display = ('license_key', 'hardware_id', 'activated_at')
     search_fields = ('license_key__key', 'hardware_id')
+
+
+@admin.register(ServiceSettings)
+class ServiceSettingsAdmin(admin.ModelAdmin):
+    list_display = ('company_name', 'telegram_url', 'whatsapp_url', 'notice_enabled', 'updated_at')

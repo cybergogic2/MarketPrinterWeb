@@ -1,99 +1,73 @@
-{% extends 'website/base.html' %}
+{% extends 'licenses/account/base.html' %}
 
-{% block content %}
-<div class="max-w-4xl mx-auto px-4 py-12">
+{% block title %}Токены доступа — ПВЗшник.рф{% endblock %}
 
-    {# Заголовок с кнопками #}
-    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
-        <h1 class="text-2xl font-bold">Мои лицензии</h1>
-        <div class="flex gap-3">
-            <a href="{% url 'payment_history' %}"
-               class="text-sm text-gray-600 hover:text-brand-600 px-4 py-2">
-                История платежей
-            </a>
-            <a href="{% url 'buy_new_license' %}"
-               class="bg-brand-600 hover:bg-brand-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition">
-                + Добавить лицензию
-            </a>
-        </div>
+{% block account_content %}
+<div class="account-page-head">
+    <div>
+        <h1>Токены доступа</h1>
+        <p>Создавайте токены для программы и следите за сроком действия.</p>
     </div>
+    <a class="account-button account-button-primary" href="{% url 'buy_new_license' %}">
+        <i data-lucide="plus" aria-hidden="true"></i>
+        <span>Создать новый токен</span>
+    </a>
+</div>
 
-    {# Список лицензий #}
-    {% if licenses %}
-        <div class="space-y-4">
-            {% for lic in licenses %}
-            <div class="border border-gray-200 rounded-xl p-5 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-
-                {# Левая часть: ключ и статус #}
-                <div class="flex-1">
-                    <div class="font-mono text-sm text-gray-500 break-all">{{ lic.key }}</div>
-
-                    <div class="mt-2 text-sm flex flex-wrap items-center gap-x-2 gap-y-1">
-                        {% if lic.status == 'active' %}
-                            <span class="inline-flex items-center gap-1 text-green-600">
-                                <span class="w-2 h-2 bg-green-500 rounded-full"></span>
-                                Активирована
-                            </span>
-                            {% if lic.expires_at %}
-                                <span class="text-gray-500">до {{ lic.expires_at|date:"d.m.Y" }}</span>
-                            {% endif %}
-
-                        {% elif lic.status == 'pending' %}
-                            <span class="inline-flex items-center gap-1 text-yellow-600">
-                                <span class="w-2 h-2 bg-yellow-500 rounded-full"></span>
-                                Ожидает активации
-                            </span>
-                            <span class="text-gray-500">— введите ключ в программе</span>
-
-                        {% elif lic.status == 'expired' %}
-                            <span class="inline-flex items-center gap-1 text-red-600">
-                                <span class="w-2 h-2 bg-red-500 rounded-full"></span>
-                                Истекла
-                            </span>
-                            {% if lic.expires_at %}
-                                <span class="text-gray-500">{{ lic.expires_at|date:"d.m.Y" }}</span>
-                            {% endif %}
-
-                        {% else %}
-                            <span class="inline-flex items-center gap-1 text-gray-500">
-                                <span class="w-2 h-2 bg-gray-400 rounded-full"></span>
-                                Деактивирована
-                            </span>
-                        {% endif %}
-                    </div>
+{% if licenses %}
+    <section class="account-token-list" aria-label="Список токенов">
+        {% for lic in licenses %}
+            <article class="account-card account-token-row">
+                <div class="account-token-title">
+                    <strong>Токен #{{ lic.id }}</strong>
+                    <span class="account-token-key">{{ lic.key }}</span>
                 </div>
 
-                {# Правая часть: кнопки #}
-                <div class="flex gap-2 shrink-0">
-                    {# Кнопка продления #}
-                    <a href="{% url 'buy_license' lic.id %}"
-                       class="bg-brand-600 hover:bg-brand-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition whitespace-nowrap">
-                        {% if lic.status == 'expired' %}Возобновить{% else %}Продлить{% endif %}
-                    </a>
+                {% if lic.status == 'active' %}
+                    <span class="account-status account-status-active">Активен</span>
+                {% elif lic.status == 'pending' %}
+                    <span class="account-status account-status-pending">Ожидает</span>
+                {% elif lic.status == 'expired' %}
+                    <span class="account-status account-status-expired">Истёк</span>
+                {% else %}
+                    <span class="account-status account-status-deactivated">Отключён</span>
+                {% endif %}
 
-                    {# Кнопка деактивации — только для активных #}
-                    {% if lic.status == 'active' %}
-                    <a href="{% url 'deactivate_license' lic.id %}"
-                       class="border border-gray-300 hover:border-red-400 hover:text-red-600 text-gray-600 text-sm font-medium px-4 py-2 rounded-lg transition whitespace-nowrap">
-                        Деактивировать
+                <span class="account-date">
+                    {% if lic.expires_at %}
+                        до {{ lic.expires_at|date:"d.m.Y" }}
+                    {% else %}
+                        без срока
+                    {% endif %}
+                </span>
+
+                <div class="account-token-actions">
+                    <a class="account-token-action" href="{% url 'buy_license' lic.id %}">
+                        <i data-lucide="refresh-cw" aria-hidden="true"></i>
+                        <span>{% if lic.status == 'expired' %}Возобновить{% else %}Продлить{% endif %}</span>
                     </a>
+                    {% if lic.status == 'active' %}
+                        <a class="account-token-action" href="{% url 'deactivate_license' lic.id %}">
+                            <i data-lucide="unlink" aria-hidden="true"></i>
+                            <span>Деактивировать</span>
+                        </a>
                     {% endif %}
                 </div>
+            </article>
+        {% endfor %}
+    </section>
 
-            </div>
-            {% endfor %}
-        </div>
-
-    {% else %}
-        {# Пустое состояние #}
-        <div class="text-center py-16 border border-dashed border-gray-200 rounded-xl">
-            <p class="text-gray-500 mb-4">У вас пока нет лицензий.</p>
-            <a href="{% url 'buy_new_license' %}"
-               class="inline-block bg-brand-600 hover:bg-brand-700 text-white text-sm font-medium px-6 py-2 rounded-lg transition">
-                Купить первую лицензию
-            </a>
-        </div>
-    {% endif %}
-
-</div>
+    <div class="account-summary-line">
+        <span>Показаны {{ licenses|length }} токенов</span>
+        <span>Активно: {{ active_tokens_count }}</span>
+    </div>
+{% else %}
+    <section class="account-empty">
+        <p>У вас пока нет токенов.</p>
+        <a class="account-button account-button-primary" href="{% url 'buy_new_license' %}">
+            <i data-lucide="plus" aria-hidden="true"></i>
+            <span>Создать первый токен</span>
+        </a>
+    </section>
+{% endif %}
 {% endblock %}

@@ -7,14 +7,18 @@ from django.contrib.auth.models import User
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
+from django.core.exceptions import PermissionDenied
+from django.db.models import Q
+from django.http import HttpResponse
+from django.urls import reverse
 from datetime import timedelta
 
 from django.contrib.auth import login
-from .forms import RegisterForm
+from .forms import RegisterForm, ServiceSettingsForm
 
 from drf_spectacular.utils import extend_schema, OpenApiResponse, OpenApiExample
 
-from .models import LicenseKey, Activation, Payment
+from .models import LicenseKey, Activation, Payment, ServiceSettings
 from .serializers import (
     ActivationRequestSerializer,
     CheckRequestSerializer,
@@ -262,18 +266,48 @@ class CreateLicenseView(APIView):
 # ЛИЧНЫЙ КАБИНЕТ
 # ============================================================
 
+def account_context(request, **extra):
+    service_settings = ServiceSettings.load()
+    active_tokens_count = request.user.licenses.filter(is_active=True).filter(
+        Q(expires_at__isnull=True) | Q(expires_at__gt=timezone.now())
+    ).count()
+    download_path = reverse('download')
+    context = {
+        'service_settings': service_settings,
+        'account_balance': 0,
+        'active_tokens_count': active_tokens_count,
+        'download_url': download_path,
+        'download_qr_url': reverse('download_qr'),
+        'account_notice': (
+            service_settings
+            if service_settings.notice_enabled and service_settings.notice_text
+            else None
+        ),
+    }
+    context.update(extra)
+    return context
+
+
 @login_required
 def account_dashboard(request):
     """Личный кабинет: список ключей."""
     licenses = request.user.licenses.all().order_by('-created_at')
-    return render(request, 'licenses/account/dashboard.html', {'licenses': licenses})
+    return render(request, 'licenses/account/dashboard.html', account_context(
+        request,
+        licenses=licenses,
+        account_nav='tokens',
+    ))
 
 
 @login_required
 def payment_history(request):
     """История платежей."""
     payments = request.user.payments.all().order_by('-created_at')
-    return render(request, 'licenses/account/payments.html', {'payments': payments})
+    return render(request, 'licenses/account/payments.html', account_context(
+        request,
+        payments=payments,
+        account_nav='payments',
+    ))
 
 
 @login_required
@@ -314,11 +348,13 @@ def buy_license(request, key_id=None):
         )
         return redirect('account_dashboard')
 
-    return render(request, 'licenses/account/buy.html', {
-        'license_key': license_key,
-        'is_new': is_new,
-        'pricing': PRICING,
-    })
+    return render(request, 'licenses/account/buy.html', account_context(
+        request,
+        license_key=license_key,
+        is_new=is_new,
+        pricing=PRICING,
+        account_nav='tokens',
+    ))
 
 
 @login_required
@@ -339,9 +375,57 @@ def deactivate_license(request, key_id):
 
         return redirect('account_dashboard')
 
-    return render(request, 'licenses/account/deactivate.html', {
-        'license_key': license_key,
-    })
+    return render(request, 'licenses/account/deactivate.html', account_context(
+        request,
+        license_key=license_key,
+        account_nav='tokens',
+    ))
+
+
+@login_required
+def service_settings(request):
+    """Настройки сервиса для суперпользователя."""
+    if not request.user.is_superuser:
+        raise PermissionDenied
+
+    settings_obj = ServiceSettings.load()
+    if request.method == 'POST':
+        form = ServiceSettingsForm(request.POST, instance=settings_obj)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Настройки сервиса сохранены.')
+            return redirect('service_settings')
+    else:
+        form = ServiceSettingsForm(instance=settings_obj)
+
+    return render(request, 'licenses/account/service_settings.html', account_context(
+        request,
+        form=form,
+        account_nav='settings',
+    ))
+
+
+@login_required
+def download_qr(request):
+    """SVG QR-code со ссылкой на скачивание программы."""
+    download_url = request.build_absolute_uri(reverse('download'))
+    try:
+        import qrcode
+        from qrcode.image.svg import SvgPathImage
+    except ImportError:
+        return HttpResponse(
+            '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120">'
+            '<rect width="120" height="120" fill="#fff"/>'
+            '<text x="60" y="64" text-anchor="middle" font-size="16" fill="#111">QR</text>'
+            '</svg>',
+            content_type='image/svg+xml',
+        )
+
+    image = qrcode.make(download_url, image_factory=SvgPathImage, box_size=10)
+    response = HttpResponse(content_type='image/svg+xml')
+    image.save(response)
+    return response
+
 
 def register(request):
     """Регистрация нового пользователя."""
