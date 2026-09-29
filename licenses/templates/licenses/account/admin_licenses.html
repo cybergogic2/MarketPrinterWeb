@@ -1,0 +1,81 @@
+{% extends 'licenses/account/base.html' %}
+
+{% block title %}Лицензии — {{ service_settings.service_name|default:"Magic ПВЗ" }}{% endblock %}
+
+{% block account_content %}
+<div class="account-page-head">
+    <div>
+        <h1>Лицензии</h1>
+        <p>Создание, редактирование и отключение токенов пользователей.</p>
+    </div>
+    <a class="account-button account-button-primary" href="{% url 'account_admin_license_create' %}">
+        <i data-lucide="plus" aria-hidden="true"></i>
+        <span>Добавить лицензию</span>
+    </a>
+</div>
+
+<form class="account-filter-bar" method="get">
+    <input class="account-input" type="search" name="q" value="{{ query }}" placeholder="Ключ, пользователь, email или ID">
+    <button class="account-button account-button-outline" type="submit">
+        <i data-lucide="search" aria-hidden="true"></i>
+        <span>Найти</span>
+    </button>
+</form>
+
+{% if licenses %}
+    <div class="account-table-wrap">
+        <table class="account-table account-table-admin">
+            <thead>
+            <tr>
+                <th>Лицензия</th>
+                <th>Пользователь</th>
+                <th>Статус</th>
+                <th>Истекает</th>
+                <th>Создана</th>
+                <th></th>
+            </tr>
+            </thead>
+            <tbody>
+            {% for lic in licenses %}
+                <tr>
+                    <td>
+                        <span class="account-cell-main">
+                            <strong>#{{ lic.id }}</strong>
+                            <span class="account-token-key">{{ lic.key }}</span>
+                        </span>
+                    </td>
+                    <td>{{ lic.user.username }}</td>
+                    <td>
+                        {% if lic.status == 'active' %}
+                            <span class="account-status account-status-active">Активна</span>
+                        {% elif lic.status == 'pending' %}
+                            <span class="account-status account-status-pending">Ожидает</span>
+                        {% elif lic.status == 'expired' %}
+                            <span class="account-status account-status-expired">Истекла</span>
+                        {% else %}
+                            <span class="account-status account-status-deactivated">Отключена</span>
+                        {% endif %}
+                    </td>
+                    <td>{% if lic.expires_at %}{{ lic.expires_at|date:"d.m.Y H:i" }}{% else %}без срока{% endif %}</td>
+                    <td>{{ lic.created_at|date:"d.m.Y H:i" }}</td>
+                    <td>
+                        <div class="account-table-actions">
+                            <a class="account-icon-button" href="{% url 'account_admin_license_edit' lic.id %}" aria-label="Редактировать лицензию">
+                                <i data-lucide="pencil" aria-hidden="true"></i>
+                            </a>
+                            <a class="account-icon-button" href="{% url 'account_admin_license_delete' lic.id %}" aria-label="Удалить лицензию">
+                                <i data-lucide="trash-2" aria-hidden="true"></i>
+                            </a>
+                        </div>
+                    </td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% else %}
+    <section class="account-empty">
+        <p>Лицензии не найдены.</p>
+    </section>
+{% endif %}
+{% endblock %}

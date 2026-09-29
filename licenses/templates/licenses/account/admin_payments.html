@@ -1,0 +1,83 @@
+{% extends 'licenses/account/base.html' %}
+
+{% block title %}Платежи админа — {{ service_settings.service_name|default:"Magic ПВЗ" }}{% endblock %}
+
+{% block account_content %}
+<div class="account-page-head">
+    <div>
+        <h1>Платежи</h1>
+        <p>Административная история платежей и их статусов.</p>
+    </div>
+    <a class="account-button account-button-primary" href="{% url 'account_admin_payment_create' %}">
+        <i data-lucide="plus" aria-hidden="true"></i>
+        <span>Добавить платёж</span>
+    </a>
+</div>
+
+<form class="account-filter-bar" method="get">
+    <input class="account-input" type="search" name="q" value="{{ query }}" placeholder="Пользователь, email, ключ, ID платежа">
+    <button class="account-button account-button-outline" type="submit">
+        <i data-lucide="search" aria-hidden="true"></i>
+        <span>Найти</span>
+    </button>
+</form>
+
+{% if payments %}
+    <div class="account-table-wrap">
+        <table class="account-table account-table-admin">
+            <thead>
+            <tr>
+                <th>Платёж</th>
+                <th>Пользователь</th>
+                <th>Сумма</th>
+                <th>Дней</th>
+                <th>Статус</th>
+                <th>Создан</th>
+                <th></th>
+            </tr>
+            </thead>
+            <tbody>
+            {% for payment in payments %}
+                <tr>
+                    <td>
+                        <span class="account-cell-main">
+                            <strong>#{{ payment.id }}</strong>
+                            <span class="account-muted">{% if payment.gateway_payment_id %}{{ payment.gateway_payment_id }}{% else %}без ID шлюза{% endif %}</span>
+                        </span>
+                    </td>
+                    <td>{{ payment.user.username }}</td>
+                    <td>{{ payment.amount }}₽</td>
+                    <td>{{ payment.days }}</td>
+                    <td>
+                        {% if payment.status == 'succeeded' %}
+                            <span class="account-status account-status-active">Успешно</span>
+                        {% elif payment.status == 'pending' %}
+                            <span class="account-status account-status-pending">Ожидание</span>
+                        {% elif payment.status == 'failed' %}
+                            <span class="account-status account-status-expired">Ошибка</span>
+                        {% else %}
+                            <span class="account-status account-status-deactivated">Возврат</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ payment.created_at|date:"d.m.Y H:i" }}</td>
+                    <td>
+                        <div class="account-table-actions">
+                            <a class="account-icon-button" href="{% url 'account_admin_payment_edit' payment.id %}" aria-label="Редактировать платёж">
+                                <i data-lucide="pencil" aria-hidden="true"></i>
+                            </a>
+                            <a class="account-icon-button" href="{% url 'account_admin_payment_delete' payment.id %}" aria-label="Удалить платёж">
+                                <i data-lucide="trash-2" aria-hidden="true"></i>
+                            </a>
+                        </div>
+                    </td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% else %}
+    <section class="account-empty">
+        <p>Платежи не найдены.</p>
+    </section>
+{% endif %}
+{% endblock %}

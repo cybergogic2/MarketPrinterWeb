@@ -500,6 +500,10 @@
             font-size: 14px;
         }
 
+        .account-table-admin {
+            min-width: 860px;
+        }
+
         .account-table th,
         .account-table td {
             padding: 14px 16px;
@@ -646,6 +650,23 @@
             gap: 8px;
         }
 
+        .account-cell-main {
+            display: grid;
+            gap: 3px;
+        }
+
+        .account-cell-main strong {
+            font-weight: 600;
+        }
+
+        .account-filter-bar {
+            max-width: 720px;
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) auto;
+            gap: 10px;
+            margin-bottom: 16px;
+        }
+
         .account-inline-form {
             display: inline-flex;
             margin: 0;
@@ -760,7 +781,8 @@
             .account-messengers,
             .account-download,
             .account-token-row,
-            .account-form-grid {
+            .account-form-grid,
+            .account-filter-bar {
                 grid-template-columns: 1fr;
             }
 
@@ -810,6 +832,18 @@
             <section class="account-section">
                 <p class="account-section-label">Админ</p>
                 <nav class="account-nav" aria-label="Админ-разделы">
+                    <a href="{% url 'account_admin_users' %}" class="{% if account_nav == 'admin_users' %}is-active{% endif %}">
+                        <i data-lucide="users" aria-hidden="true"></i>
+                        <span>Пользователи</span>
+                    </a>
+                    <a href="{% url 'account_admin_licenses' %}" class="{% if account_nav == 'admin_licenses' %}is-active{% endif %}">
+                        <i data-lucide="key-square" aria-hidden="true"></i>
+                        <span>Лицензии</span>
+                    </a>
+                    <a href="{% url 'account_admin_payments' %}" class="{% if account_nav == 'admin_payments' %}is-active{% endif %}">
+                        <i data-lucide="receipt" aria-hidden="true"></i>
+                        <span>Платежи</span>
+                    </a>
                     <a href="{% url 'service_settings' %}" class="{% if account_nav == 'settings' %}is-active{% endif %}">
                         <i data-lucide="settings" aria-hidden="true"></i>
                         <span>Настройки</span>

@@ -8,14 +8,21 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.core.exceptions import PermissionDenied
-from django.db.models import Q
+from django.db.models import Count, Q
 from django.http import HttpResponse, JsonResponse
 from django.urls import reverse
 from django.views.decorators.http import require_POST
 from datetime import timedelta
 
 from django.contrib.auth import login
-from .forms import RegisterForm, ServiceNotificationForm, ServiceSettingsForm
+from .forms import (
+    AdminLicenseForm,
+    AdminPaymentForm,
+    AdminUserForm,
+    RegisterForm,
+    ServiceNotificationForm,
+    ServiceSettingsForm,
+)
 
 from drf_spectacular.utils import extend_schema, OpenApiResponse, OpenApiExample
 
@@ -451,6 +458,287 @@ def service_settings(request):
         request,
         form=form,
         account_nav='settings',
+    ))
+
+
+@login_required
+def account_admin_users(request):
+    """Управление пользователями в интерфейсе личного кабинета."""
+    ensure_superuser(request.user)
+    query = request.GET.get('q', '').strip()
+    users = User.objects.annotate(
+        licenses_count=Count('licenses', distinct=True),
+        payments_count=Count('payments', distinct=True),
+    ).order_by('-date_joined', '-id')
+    if query:
+        user_filter = (
+            Q(username__icontains=query)
+            | Q(email__icontains=query)
+            | Q(first_name__icontains=query)
+            | Q(last_name__icontains=query)
+        )
+        if query.isdigit():
+            user_filter |= Q(id=int(query))
+        users = users.filter(user_filter)
+
+    return render(request, 'licenses/account/admin_users.html', account_context(
+        request,
+        users=users,
+        query=query,
+        account_nav='admin_users',
+    ))
+
+
+@login_required
+def account_admin_user_create(request):
+    """Создание пользователя суперадмином."""
+    ensure_superuser(request.user)
+    if request.method == 'POST':
+        form = AdminUserForm(request.POST, request_user=request.user)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Пользователь создан.')
+            return redirect('account_admin_users')
+    else:
+        form = AdminUserForm(initial={'is_active': True}, request_user=request.user)
+
+    return render(request, 'licenses/account/admin_user_form.html', account_context(
+        request,
+        form=form,
+        form_title='Новый пользователь',
+        submit_label='Создать пользователя',
+        account_nav='admin_users',
+    ))
+
+
+@login_required
+def account_admin_user_edit(request, user_id):
+    """Редактирование пользователя суперадмином."""
+    ensure_superuser(request.user)
+    target_user = get_object_or_404(User, id=user_id)
+    if request.method == 'POST':
+        form = AdminUserForm(request.POST, instance=target_user, request_user=request.user)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Пользователь сохранён.')
+            return redirect('account_admin_users')
+    else:
+        form = AdminUserForm(instance=target_user, request_user=request.user)
+
+    return render(request, 'licenses/account/admin_user_form.html', account_context(
+        request,
+        form=form,
+        target_user=target_user,
+        form_title='Редактировать пользователя',
+        submit_label='Сохранить пользователя',
+        account_nav='admin_users',
+    ))
+
+
+@login_required
+def account_admin_user_delete(request, user_id):
+    """Удаление пользователя суперадмином."""
+    ensure_superuser(request.user)
+    target_user = get_object_or_404(User, id=user_id)
+    if target_user.id == request.user.id:
+        messages.error(request, 'Нельзя удалить свой аккаунт.')
+        return redirect('account_admin_users')
+
+    if request.method == 'POST':
+        target_user.delete()
+        messages.success(request, 'Пользователь удалён.')
+        return redirect('account_admin_users')
+
+    return render(request, 'licenses/account/admin_confirm_delete.html', account_context(
+        request,
+        title='Удалить пользователя?',
+        object_label=target_user.get_username(),
+        warning='Будут удалены связанные лицензии и платежи этого пользователя.',
+        cancel_url=reverse('account_admin_users'),
+        account_nav='admin_users',
+    ))
+
+
+@login_required
+def account_admin_licenses(request):
+    """Управление лицензиями в интерфейсе личного кабинета."""
+    ensure_superuser(request.user)
+    query = request.GET.get('q', '').strip()
+    licenses = LicenseKey.objects.select_related('user').prefetch_related(
+        'activations',
+    ).order_by('-created_at', '-id')
+    if query:
+        license_filter = (
+            Q(key__icontains=query)
+            | Q(user__username__icontains=query)
+            | Q(user__email__icontains=query)
+        )
+        if query.isdigit():
+            license_filter |= Q(id=int(query)) | Q(user_id=int(query))
+        licenses = licenses.filter(license_filter)
+
+    return render(request, 'licenses/account/admin_licenses.html', account_context(
+        request,
+        licenses=licenses,
+        query=query,
+        account_nav='admin_licenses',
+    ))
+
+
+@login_required
+def account_admin_license_create(request):
+    """Создание лицензии суперадмином."""
+    ensure_superuser(request.user)
+    if request.method == 'POST':
+        form = AdminLicenseForm(request.POST)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Лицензия создана.')
+            return redirect('account_admin_licenses')
+    else:
+        form = AdminLicenseForm(initial={'is_active': True})
+
+    return render(request, 'licenses/account/admin_license_form.html', account_context(
+        request,
+        form=form,
+        form_title='Новая лицензия',
+        submit_label='Создать лицензию',
+        account_nav='admin_licenses',
+    ))
+
+
+@login_required
+def account_admin_license_edit(request, license_id):
+    """Редактирование лицензии суперадмином."""
+    ensure_superuser(request.user)
+    license_key = get_object_or_404(LicenseKey, id=license_id)
+    if request.method == 'POST':
+        form = AdminLicenseForm(request.POST, instance=license_key)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Лицензия сохранена.')
+            return redirect('account_admin_licenses')
+    else:
+        form = AdminLicenseForm(instance=license_key)
+
+    return render(request, 'licenses/account/admin_license_form.html', account_context(
+        request,
+        form=form,
+        license_key=license_key,
+        form_title='Редактировать лицензию',
+        submit_label='Сохранить лицензию',
+        account_nav='admin_licenses',
+    ))
+
+
+@login_required
+def account_admin_license_delete(request, license_id):
+    """Удаление лицензии суперадмином."""
+    ensure_superuser(request.user)
+    license_key = get_object_or_404(LicenseKey, id=license_id)
+    if request.method == 'POST':
+        license_key.delete()
+        messages.success(request, 'Лицензия удалена.')
+        return redirect('account_admin_licenses')
+
+    return render(request, 'licenses/account/admin_confirm_delete.html', account_context(
+        request,
+        title='Удалить лицензию?',
+        object_label=str(license_key.key),
+        warning='Привязки этой лицензии будут удалены, связанные платежи останутся без лицензии.',
+        cancel_url=reverse('account_admin_licenses'),
+        account_nav='admin_licenses',
+    ))
+
+
+@login_required
+def account_admin_payments(request):
+    """Управление платежами в интерфейсе личного кабинета."""
+    ensure_superuser(request.user)
+    query = request.GET.get('q', '').strip()
+    payments = Payment.objects.select_related('user', 'license_key').order_by('-created_at', '-id')
+    if query:
+        payment_filter = (
+            Q(user__username__icontains=query)
+            | Q(user__email__icontains=query)
+            | Q(gateway_payment_id__icontains=query)
+            | Q(license_key__key__icontains=query)
+        )
+        if query.isdigit():
+            payment_filter |= Q(id=int(query)) | Q(user_id=int(query))
+        payments = payments.filter(payment_filter)
+
+    return render(request, 'licenses/account/admin_payments.html', account_context(
+        request,
+        payments=payments,
+        query=query,
+        account_nav='admin_payments',
+    ))
+
+
+@login_required
+def account_admin_payment_create(request):
+    """Создание платежа суперадмином."""
+    ensure_superuser(request.user)
+    if request.method == 'POST':
+        form = AdminPaymentForm(request.POST)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Платёж создан.')
+            return redirect('account_admin_payments')
+    else:
+        form = AdminPaymentForm(initial={'days': 30, 'status': 'pending'})
+
+    return render(request, 'licenses/account/admin_payment_form.html', account_context(
+        request,
+        form=form,
+        form_title='Новый платёж',
+        submit_label='Создать платёж',
+        account_nav='admin_payments',
+    ))
+
+
+@login_required
+def account_admin_payment_edit(request, payment_id):
+    """Редактирование платежа суперадмином."""
+    ensure_superuser(request.user)
+    payment = get_object_or_404(Payment, id=payment_id)
+    if request.method == 'POST':
+        form = AdminPaymentForm(request.POST, instance=payment)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Платёж сохранён.')
+            return redirect('account_admin_payments')
+    else:
+        form = AdminPaymentForm(instance=payment)
+
+    return render(request, 'licenses/account/admin_payment_form.html', account_context(
+        request,
+        form=form,
+        payment=payment,
+        form_title='Редактировать платёж',
+        submit_label='Сохранить платёж',
+        account_nav='admin_payments',
+    ))
+
+
+@login_required
+def account_admin_payment_delete(request, payment_id):
+    """Удаление платежа суперадмином."""
+    ensure_superuser(request.user)
+    payment = get_object_or_404(Payment, id=payment_id)
+    if request.method == 'POST':
+        payment.delete()
+        messages.success(request, 'Платёж удалён.')
+        return redirect('account_admin_payments')
+
+    return render(request, 'licenses/account/admin_confirm_delete.html', account_context(
+        request,
+        title='Удалить платёж?',
+        object_label=f'Платёж #{payment.id}',
+        warning='Запись платежа будет удалена из истории.',
+        cancel_url=reverse('account_admin_payments'),
+        account_nav='admin_payments',
     ))
 
 

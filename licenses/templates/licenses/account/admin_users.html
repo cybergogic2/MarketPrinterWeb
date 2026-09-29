@@ -1,0 +1,81 @@
+{% extends 'licenses/account/base.html' %}
+
+{% block title %}Пользователи — {{ service_settings.service_name|default:"Magic ПВЗ" }}{% endblock %}
+
+{% block account_content %}
+<div class="account-page-head">
+    <div>
+        <h1>Пользователи</h1>
+        <p>Управление аккаунтами, доступом и правами суперадмина.</p>
+    </div>
+    <a class="account-button account-button-primary" href="{% url 'account_admin_user_create' %}">
+        <i data-lucide="user-plus" aria-hidden="true"></i>
+        <span>Добавить пользователя</span>
+    </a>
+</div>
+
+<form class="account-filter-bar" method="get">
+    <input class="account-input" type="search" name="q" value="{{ query }}" placeholder="Логин, email, имя или ID">
+    <button class="account-button account-button-outline" type="submit">
+        <i data-lucide="search" aria-hidden="true"></i>
+        <span>Найти</span>
+    </button>
+</form>
+
+{% if users %}
+    <div class="account-table-wrap">
+        <table class="account-table account-table-admin">
+            <thead>
+            <tr>
+                <th>Пользователь</th>
+                <th>Статус</th>
+                <th>Токены</th>
+                <th>Платежи</th>
+                <th>Создан</th>
+                <th></th>
+            </tr>
+            </thead>
+            <tbody>
+            {% for item in users %}
+                <tr>
+                    <td>
+                        <span class="account-cell-main">
+                            <strong>{{ item.username }}</strong>
+                            <span class="account-muted">{% if item.email %}{{ item.email }}{% else %}email не указан{% endif %}</span>
+                        </span>
+                    </td>
+                    <td>
+                        {% if item.is_superuser %}
+                            <span class="account-badge">Суперадмин</span>
+                        {% elif item.is_active %}
+                            <span class="account-badge">Активен</span>
+                        {% else %}
+                            <span class="account-badge account-badge-off">Отключён</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ item.licenses_count }}</td>
+                    <td>{{ item.payments_count }}</td>
+                    <td>{{ item.date_joined|date:"d.m.Y H:i" }}</td>
+                    <td>
+                        <div class="account-table-actions">
+                            <a class="account-icon-button" href="{% url 'account_admin_user_edit' item.id %}" aria-label="Редактировать пользователя">
+                                <i data-lucide="pencil" aria-hidden="true"></i>
+                            </a>
+                            {% if item.id != request.user.id %}
+                                <a class="account-icon-button" href="{% url 'account_admin_user_delete' item.id %}" aria-label="Удалить пользователя">
+                                    <i data-lucide="trash-2" aria-hidden="true"></i>
+                                </a>
+                            {% endif %}
+                        </div>
+                    </td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% else %}
+    <section class="account-empty">
+        <p>Пользователи не найдены.</p>
+    </section>
+{% endif %}
+{% endblock %}
