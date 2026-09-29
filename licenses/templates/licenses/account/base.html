@@ -920,14 +920,16 @@
 
             {% if messages %}
                 {% for message in messages %}
-                    <section class="account-message {{ message.tags }}" {% if message.tags != 'error' %}data-auto-dismiss-message="2500"{% endif %}>
-                        <i data-lucide="{% if message.tags == 'success' %}check-circle{% elif message.tags == 'error' %}circle-alert{% else %}info{% endif %}" aria-hidden="true"></i>
-                        <div>
-                            <strong>{% if message.tags == 'success' %}Готово{% elif message.tags == 'error' %}Ошибка{% else %}Сообщение{% endif %}</strong>
-                            <span>{{ message }}</span>
-                        </div>
-                        <span></span>
-                    </section>
+                    {% if message.tags == 'error' %}
+                        <section class="account-message {{ message.tags }}">
+                            <i data-lucide="circle-alert" aria-hidden="true"></i>
+                            <div>
+                                <strong>Ошибка</strong>
+                                <span>{{ message }}</span>
+                            </div>
+                            <span></span>
+                        </section>
+                    {% endif %}
                 {% endfor %}
             {% endif %}
 
