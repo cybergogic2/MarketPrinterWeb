@@ -343,6 +343,15 @@
             border-color: #f2b8c0;
         }
 
+        .account-message.is-hiding {
+            opacity: 0;
+            transform: translateY(-4px);
+        }
+
+        .account-message[data-auto-dismiss-message] {
+            transition: opacity .18s ease, transform .18s ease;
+        }
+
         .account-close {
             width: 32px;
             min-height: 32px;
@@ -911,7 +920,7 @@
 
             {% if messages %}
                 {% for message in messages %}
-                    <section class="account-message {{ message.tags }}">
+                    <section class="account-message {{ message.tags }}" {% if message.tags != 'error' %}data-auto-dismiss-message="5000"{% endif %}>
                         <i data-lucide="{% if message.tags == 'success' %}check-circle{% elif message.tags == 'error' %}circle-alert{% else %}info{% endif %}" aria-hidden="true"></i>
                         <div>
                             <strong>{% if message.tags == 'success' %}Готово{% elif message.tags == 'error' %}Ошибка{% else %}Сообщение{% endif %}</strong>
@@ -942,6 +951,15 @@
                     window.localStorage.setItem(storageKey, 'closed');
                 });
             }
+        });
+        document.querySelectorAll('[data-auto-dismiss-message]').forEach(function (message) {
+            var delay = Number(message.getAttribute('data-auto-dismiss-message')) || 5000;
+            window.setTimeout(function () {
+                message.classList.add('is-hiding');
+                window.setTimeout(function () {
+                    message.remove();
+                }, 220);
+            }, delay);
         });
         if (window.lucide) {
             window.lucide.createIcons();
