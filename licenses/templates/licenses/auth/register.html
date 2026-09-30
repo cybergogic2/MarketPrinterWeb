@@ -1,5 +1,7 @@
 {% extends 'website/base.html' %}
 
+{% block title %}Регистрация — {{ site_settings.service_name|default:"Magic ПВЗ" }}{% endblock %}
+
 {% block content %}
 <div class="max-w-md mx-auto px-4 py-16">
     <h1 class="text-2xl font-bold mb-6 text-center">Регистрация</h1>

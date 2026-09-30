@@ -9,8 +9,8 @@
         <p>Административная история платежей и их статусов.</p>
     </div>
     <a class="account-button account-button-primary" href="{% url 'account_admin_payment_create' %}">
-        <i data-lucide="plus" aria-hidden="true"></i>
-        <span>Добавить платёж</span>
+        <i data-lucide="wallet" aria-hidden="true"></i>
+        <span>Ручное пополнение</span>
     </a>
 </div>
 
@@ -34,7 +34,6 @@
                 <th>Дней</th>
                 <th>Статус</th>
                 <th>Создан</th>
-                <th></th>
             </tr>
             </thead>
             <tbody>
@@ -49,12 +48,24 @@
                     <td>{{ payment.user.username }}</td>
                     <td>
                         <span class="account-cell-main">
-                            <strong>{{ payment.get_operation_type_display }}</strong>
-                            <span class="account-muted">{{ payment.provider }}</span>
+                            <strong>
+                                {% if payment.operation_type == 'manual' and payment.provider == 'manual' %}
+                                    Ручное пополнение баланса
+                                {% else %}
+                                    {{ payment.get_operation_type_display }}
+                                {% endif %}
+                            </strong>
+                            <span class="account-muted">
+                                {% if payment.operation_type == 'manual' and payment.provider == 'manual' %}
+                                    Внёс: {{ payment.metadata.admin_username|default:"суперадмин не указан" }}
+                                {% else %}
+                                    {{ payment.provider }}
+                                {% endif %}
+                            </span>
                         </span>
                     </td>
                     <td>{{ payment.amount }}₽</td>
-                    <td>{{ payment.days }}</td>
+                    <td>{% if payment.days %}{{ payment.days }}{% else %}—{% endif %}</td>
                     <td>
                         {% if payment.status == 'succeeded' %}
                             <span class="account-status account-status-active">Успешно</span>
@@ -67,16 +78,6 @@
                         {% endif %}
                     </td>
                     <td>{{ payment.created_at|date:"d.m.Y H:i" }}</td>
-                    <td>
-                        <div class="account-table-actions">
-                            <a class="account-icon-button" href="{% url 'account_admin_payment_edit' payment.id %}" aria-label="Редактировать платёж">
-                                <i data-lucide="pencil" aria-hidden="true"></i>
-                            </a>
-                            <a class="account-icon-button" href="{% url 'account_admin_payment_delete' payment.id %}" aria-label="Удалить платёж">
-                                <i data-lucide="trash-2" aria-hidden="true"></i>
-                            </a>
-                        </div>
-                    </td>
                 </tr>
             {% endfor %}
             </tbody>

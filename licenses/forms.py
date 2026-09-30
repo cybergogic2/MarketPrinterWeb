@@ -448,3 +448,40 @@ class AdminPaymentForm(forms.ModelForm):
         self.fields['license_key'].queryset = LicenseKey.objects.select_related(
             'user',
         ).order_by('-created_at', '-id')
+
+
+class AdminManualTopUpForm(forms.Form):
+    """Ручное пополнение баланса пользователя суперадмином."""
+    user = forms.ModelChoiceField(
+        label='Пользователь',
+        queryset=User.objects.none(),
+        widget=forms.Select(attrs={'class': 'account-input'}),
+    )
+    amount_rubles = forms.IntegerField(
+        label='Сумма пополнения',
+        min_value=1,
+        max_value=500000,
+        widget=forms.NumberInput(attrs={
+            'class': 'account-input',
+            'min': '1',
+            'step': '1',
+            'inputmode': 'numeric',
+        }),
+    )
+    comment = forms.CharField(
+        label='Комментарий',
+        required=False,
+        widget=forms.Textarea(attrs={
+            'class': 'account-input account-textarea',
+            'rows': 3,
+            'placeholder': 'Например: оплата по счёту, корректировка баланса',
+        }),
+    )
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['user'].queryset = User.objects.order_by('username', 'id')
+
+    @property
+    def amount_kopecks(self):
+        return rubles_to_kopecks(self.cleaned_data['amount_rubles'])

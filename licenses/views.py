@@ -28,6 +28,7 @@ from .billing import (
 )
 from .forms import (
     AdminLicenseForm,
+    AdminManualTopUpForm,
     AdminPaymentForm,
     AdminUserForm,
     LicensePointForm,
@@ -808,22 +809,45 @@ def account_admin_payments(request):
 
 @login_required
 def account_admin_payment_create(request):
-    """Создание платежа суперадмином."""
+    """Ручное пополнение баланса суперадмином."""
     ensure_superuser(request.user)
     if request.method == 'POST':
-        form = AdminPaymentForm(request.POST)
+        form = AdminManualTopUpForm(request.POST)
         if form.is_valid():
-            form.save()
-            messages.success(request, 'Платёж создан.')
+            payment = Payment.objects.create(
+                user=form.cleaned_data['user'],
+                amount=form.cleaned_data['amount_rubles'],
+                days=0,
+                operation_type='manual',
+                status='succeeded',
+                provider='manual',
+                paid_at=timezone.now(),
+                metadata={
+                    'manual_top_up': True,
+                    'comment': form.cleaned_data.get('comment', '').strip(),
+                    'admin_user_id': request.user.id,
+                    'admin_username': request.user.get_username(),
+                    'admin_email': request.user.email,
+                },
+            )
+            payment.gateway_payment_id = f'manual-top-up-{payment.id}'
+            payment.save(update_fields=['gateway_payment_id'])
+            apply_top_up_balance(
+                payment.user,
+                form.amount_kopecks,
+                payment=payment,
+                operation_type='manual',
+                comment=form.cleaned_data.get('comment', '').strip() or 'Ручное пополнение баланса',
+            )
             return redirect('account_admin_payments')
     else:
-        form = AdminPaymentForm(initial={'days': 30, 'status': 'pending'})
+        form = AdminManualTopUpForm()
 
-    return render(request, 'licenses/account/admin_payment_form.html', account_context(
+    return render(request, 'licenses/account/admin_manual_top_up_form.html', account_context(
         request,
         form=form,
-        form_title='Новый платёж',
-        submit_label='Создать платёж',
+        form_title='Ручное пополнение баланса',
+        submit_label='Пополнить баланс',
         account_nav='admin_payments',
     ))
 

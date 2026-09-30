@@ -1,10 +1,12 @@
-{% load static %}
+{% load static service_settings_tags %}
+{% current_service_settings as site_settings %}
 <!DOCTYPE html>
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}ПВЗшник.рф — автоматизация печати ячеек ПВЗ{% endblock %}</title>
+    <title>{% block title %}{{ site_settings.service_name|default:"Magic ПВЗ" }} — личный кабинет{% endblock %}</title>
+    <link rel="icon" type="image/svg+xml" href="{% static 'licenses/img/extension-logo.svg' %}">
     <meta name="description" content="{% block description %}Автоматическая печать номеров ячеек для ПВЗ. Экономия времени, точность 98%, работает со всеми маркетплейсами.{% endblock %}">
 
     <script src="https://cdn.tailwindcss.com"></script>

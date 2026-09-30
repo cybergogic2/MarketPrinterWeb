@@ -115,7 +115,12 @@ def top_up_balance(user, amount_kopecks, *, payment=None, operation_type='top_up
         description=comment,
         idempotency_key=f'{operation_type}:{uuid4()}',
     )
-    entry_type = 'recurring_top_up' if operation_type == 'recurring_top_up' else 'external_top_up'
+    if operation_type == 'recurring_top_up':
+        entry_type = 'recurring_top_up'
+    elif operation_type == 'manual':
+        entry_type = 'manual_credit'
+    else:
+        entry_type = 'external_top_up'
     entry = create_ledger_entry(
         account=account,
         user=user,
