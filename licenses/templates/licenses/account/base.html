@@ -407,8 +407,8 @@
 
         .account-token-row {
             display: grid;
-            grid-template-columns: minmax(160px, 1fr) 106px 116px 210px;
-            gap: 10px;
+            grid-template-columns: minmax(280px, 360px) max-content max-content minmax(292px, 1fr);
+            gap: 18px;
             align-items: center;
             padding: 15px 16px;
         }
@@ -768,10 +768,11 @@
             }
 
             .account-token-row {
-                grid-template-columns: minmax(0, 1fr) 130px;
+                grid-template-columns: minmax(0, 1fr) max-content;
             }
 
             .account-token-actions {
+                grid-column: 1 / -1;
                 justify-content: flex-start;
             }
         }
