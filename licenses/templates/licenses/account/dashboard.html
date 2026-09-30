@@ -62,6 +62,13 @@
                 </button>
 
                 <div class="account-token-actions">
+                    <form class="account-inline-form" method="post" action="{% url 'toggle_license_auto_renew' lic.id %}">
+                        {% csrf_token %}
+                        <button class="account-token-action" type="submit" title="{% if lic.auto_renew_enabled %}Отключить автопродление{% else %}Включить автопродление{% endif %}">
+                            <i data-lucide="repeat-2" aria-hidden="true"></i>
+                            <span>{% if lic.auto_renew_enabled %}Авто вкл{% else %}Авто выкл{% endif %}</span>
+                        </button>
+                    </form>
                     <a class="account-token-action" href="{% url 'buy_license' lic.id %}">
                         <i data-lucide="refresh-cw" aria-hidden="true"></i>
                         <span>{% if lic.status == 'expired' %}Возобновить{% else %}Продлить{% endif %}</span>

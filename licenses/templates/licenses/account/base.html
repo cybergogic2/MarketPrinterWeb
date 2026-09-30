@@ -829,6 +829,42 @@
             line-height: 1.5;
         }
 
+        .account-billing-grid {
+            max-width: 980px;
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) minmax(320px, .75fr);
+            gap: 16px;
+            align-items: start;
+        }
+
+        .account-billing-panel {
+            padding: 20px;
+        }
+
+        .account-billing-panel h2 {
+            margin: 0 0 14px;
+            font-size: 17px;
+            font-weight: 600;
+        }
+
+        .account-balance-big {
+            margin: 0 0 16px;
+            font-size: 28px;
+            font-weight: 700;
+        }
+
+        .account-money-positive {
+            color: var(--account-green);
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        .account-money-negative {
+            color: var(--account-red);
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
         .account-confirm {
             max-width: 520px;
             padding: 28px;
@@ -897,6 +933,10 @@
                 grid-column: 1 / -1;
                 justify-self: start;
                 justify-content: flex-start;
+            }
+
+            .account-billing-grid {
+                grid-template-columns: 1fr;
             }
         }
 
@@ -1054,7 +1094,7 @@
                 <div class="account-balance-line">
                     <span>Баланс:</span>
                     <b>{{ account_balance }} руб</b>
-                    <a class="account-button account-button-danger" href="{% url 'buy_new_license' %}">Пополнить</a>
+                    <a class="account-button account-button-danger" href="{% url 'top_up_balance' %}">Пополнить</a>
                 </div>
                 <div class="account-active-tokens">У вас активно {{ active_tokens_count }} токенов</div>
             </div>

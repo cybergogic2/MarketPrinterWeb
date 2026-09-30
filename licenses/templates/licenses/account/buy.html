@@ -38,6 +38,15 @@
 <form method="post" class="account-form account-pricing">
     {% csrf_token %}
 
+    <section class="account-card account-billing-panel">
+        <h2>Баланс</h2>
+        <p class="account-balance-big">{{ account_balance }} руб</p>
+        <a class="account-button account-button-outline" href="{% url 'top_up_balance' %}">
+            <i data-lucide="plus" aria-hidden="true"></i>
+            <span>Пополнить</span>
+        </a>
+    </section>
+
     {% if is_new %}
         <div class="account-field">
             <label for="id_point_comment">Адрес пункта выдачи / комментарий</label>
@@ -57,13 +66,24 @@
         </label>
     {% endfor %}
 
-    <button class="account-button account-button-primary" type="submit">
-        <i data-lucide="credit-card" aria-hidden="true"></i>
-        <span>Перейти к оплате</span>
-    </button>
+    <label class="account-checkbox-line">
+        <input class="account-checkbox" type="checkbox" name="save_payment_method" value="1">
+        <span>Сохранить способ оплаты для автоплатежей</span>
+    </label>
+
+    <div class="account-actions">
+        <button class="account-button account-button-outline" type="submit" name="payment_flow" value="balance">
+            <i data-lucide="wallet" aria-hidden="true"></i>
+            <span>Списать с баланса</span>
+        </button>
+        <button class="account-button account-button-primary" type="submit" name="payment_flow" value="provider">
+            <i data-lucide="credit-card" aria-hidden="true"></i>
+            <span>Оплатить через ЮKassa</span>
+        </button>
+    </div>
 </form>
 
 <p class="account-note">
-    Оплата происходит через защищённый платёжный шлюз. После успешной оплаты токен активируется автоматически.
+    Через ЮKassa можно оплатить любым доступным для магазина способом. В учёте сумма сначала зачисляется на баланс, затем списывается за токен.
 </p>
 {% endblock %}

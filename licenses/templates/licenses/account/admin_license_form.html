@@ -58,6 +58,12 @@
         </label>
         {% for error in form.is_active.errors %}<span class="account-field-error">{{ error }}</span>{% endfor %}
 
+        <label class="account-checkbox-line">
+            {{ form.auto_renew_enabled }}
+            <span>{{ form.auto_renew_enabled.label }}</span>
+        </label>
+        {% for error in form.auto_renew_enabled.errors %}<span class="account-field-error">{{ error }}</span>{% endfor %}
+
         <div class="account-actions">
             <button class="account-button account-button-primary" type="submit">
                 <i data-lucide="save" aria-hidden="true"></i>

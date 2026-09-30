@@ -15,7 +15,7 @@
 </div>
 
 <form class="account-filter-bar" method="get">
-    <input class="account-input" type="search" name="q" value="{{ query }}" placeholder="Пользователь, email, ключ, ID платежа">
+    <input class="account-input" type="search" name="q" value="{{ query }}" placeholder="Пользователь, email, ключ, тип, провайдер, ID платежа">
     <button class="account-button account-button-outline" type="submit">
         <i data-lucide="search" aria-hidden="true"></i>
         <span>Найти</span>
@@ -29,6 +29,7 @@
             <tr>
                 <th>Платёж</th>
                 <th>Пользователь</th>
+                <th>Тип</th>
                 <th>Сумма</th>
                 <th>Дней</th>
                 <th>Статус</th>
@@ -46,6 +47,12 @@
                         </span>
                     </td>
                     <td>{{ payment.user.username }}</td>
+                    <td>
+                        <span class="account-cell-main">
+                            <strong>{{ payment.get_operation_type_display }}</strong>
+                            <span class="account-muted">{{ payment.provider }}</span>
+                        </span>
+                    </td>
                     <td>{{ payment.amount }}₽</td>
                     <td>{{ payment.days }}</td>
                     <td>

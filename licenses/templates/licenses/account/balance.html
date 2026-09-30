@@ -1,0 +1,73 @@
+{% extends 'licenses/account/base.html' %}
+
+{% block title %}Баланс — {{ service_settings.service_name|default:"Magic ПВЗ" }}{% endblock %}
+
+{% block account_content %}
+<div class="account-page-head">
+    <div>
+        <h1>Баланс</h1>
+        <p>Пополнение счёта и автопополнение для будущих списаний.</p>
+    </div>
+    <a class="account-button account-button-outline" href="{% url 'payment_history' %}">
+        <i data-lucide="receipt-text" aria-hidden="true"></i>
+        <span>История операций</span>
+    </a>
+</div>
+
+<div class="account-billing-grid">
+    <section class="account-card account-billing-panel">
+        <h2>Пополнить счёт</h2>
+        <p class="account-balance-big">{{ account_balance }} руб</p>
+
+        <form method="post" class="account-form">
+            {% csrf_token %}
+            <input type="hidden" name="form_kind" value="top_up">
+
+            <div class="account-field">
+                {{ top_up_form.amount_rubles.label_tag }}
+                {{ top_up_form.amount_rubles }}
+                {% for error in top_up_form.amount_rubles.errors %}<span class="account-field-error">{{ error }}</span>{% endfor %}
+            </div>
+
+            <label class="account-checkbox-line">
+                {{ top_up_form.save_payment_method }}
+                <span>{{ top_up_form.save_payment_method.label }}</span>
+            </label>
+
+            <div class="account-actions">
+                <button class="account-button account-button-primary" type="submit">
+                    <i data-lucide="credit-card" aria-hidden="true"></i>
+                    <span>Оплатить через ЮKassa</span>
+                </button>
+            </div>
+        </form>
+    </section>
+
+    <section class="account-card account-billing-panel">
+        <h2>Автопополнение</h2>
+
+        <form method="post" class="account-form">
+            {% csrf_token %}
+            <input type="hidden" name="form_kind" value="recurring">
+
+            <label class="account-checkbox-line">
+                {{ recurring_form.is_enabled }}
+                <span>{{ recurring_form.is_enabled.label }}</span>
+            </label>
+
+            <div class="account-field">
+                {{ recurring_form.amount_rubles.label_tag }}
+                {{ recurring_form.amount_rubles }}
+                {% for error in recurring_form.amount_rubles.errors %}<span class="account-field-error">{{ error }}</span>{% endfor %}
+            </div>
+
+            <div class="account-actions">
+                <button class="account-button account-button-outline" type="submit">
+                    <i data-lucide="save" aria-hidden="true"></i>
+                    <span>Сохранить</span>
+                </button>
+            </div>
+        </form>
+    </section>
+</div>
+{% endblock %}

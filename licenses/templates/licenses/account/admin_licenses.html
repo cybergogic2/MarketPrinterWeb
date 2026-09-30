@@ -30,6 +30,7 @@
                 <th>Лицензия</th>
                 <th>Пользователь</th>
                 <th>Статус</th>
+                <th>Автопродление</th>
                 <th>Истекает</th>
                 <th>Создан</th>
                 <th></th>
@@ -55,6 +56,13 @@
                             <span class="account-status account-status-expired">Истёк</span>
                         {% else %}
                             <span class="account-status account-status-deactivated">Деактивирован</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if lic.auto_renew_enabled %}
+                            <span class="account-badge">Включено</span>
+                        {% else %}
+                            <span class="account-badge account-badge-off">Выключено</span>
                         {% endif %}
                     </td>
                     <td>{% if lic.expires_at %}{{ lic.expires_at|date:"d.m.Y H:i" }}{% else %}без срока{% endif %}</td>

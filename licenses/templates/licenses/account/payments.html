@@ -5,41 +5,47 @@
 {% block account_content %}
 <div class="account-page-head">
     <div>
-        <h1>История платежей</h1>
-        <p>Все операции по оплате и продлению токенов.</p>
+        <h1>История операций</h1>
+        <p>Зачисления, списания и остаток внутреннего счёта.</p>
     </div>
-    <a class="account-button account-button-outline" href="{% url 'account_dashboard' %}">
-        <i data-lucide="arrow-left" aria-hidden="true"></i>
-        <span>К токенам</span>
+    <a class="account-button account-button-primary" href="{% url 'top_up_balance' %}">
+        <i data-lucide="plus" aria-hidden="true"></i>
+        <span>Пополнить</span>
     </a>
 </div>
 
-{% if payments %}
+{% if ledger_entries %}
     <div class="account-table-wrap">
         <table class="account-table">
             <thead>
             <tr>
                 <th>Дата</th>
+                <th>Операция</th>
                 <th>Сумма</th>
-                <th>Дней</th>
-                <th>Статус</th>
+                <th>Остаток</th>
+                <th>Детали</th>
             </tr>
             </thead>
             <tbody>
-            {% for p in payments %}
+            {% for entry in ledger_entries %}
                 <tr>
-                    <td>{{ p.created_at|date:"d.m.Y H:i" }}</td>
-                    <td>{{ p.amount }}₽</td>
-                    <td>{{ p.days }}</td>
+                    <td>{{ entry.created_at|date:"d.m.Y H:i" }}</td>
+                    <td>{{ entry.get_entry_type_display }}</td>
                     <td>
-                        {% if p.status == 'succeeded' %}
-                            <span class="account-status account-status-active">Успешно</span>
-                        {% elif p.status == 'pending' %}
-                            <span class="account-status account-status-pending">Ожидание</span>
-                        {% elif p.status == 'failed' %}
-                            <span class="account-status account-status-expired">Ошибка</span>
+                        {% if entry.is_income %}
+                            <span class="account-money-positive">+{{ entry.amount_display }} руб</span>
                         {% else %}
-                            <span class="account-status account-status-deactivated">Возврат</span>
+                            <span class="account-money-negative">{{ entry.amount_display }} руб</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ entry.balance_after_display }} руб</td>
+                    <td>
+                        {% if entry.license_key %}
+                            №{{ entry.license_key.display_number }}
+                        {% elif entry.payment %}
+                            Платёж #{{ entry.payment.id }}
+                        {% else %}
+                            {{ entry.comment }}
                         {% endif %}
                     </td>
                 </tr>
@@ -49,10 +55,10 @@
     </div>
 {% else %}
     <section class="account-empty">
-        <p>Платежей пока нет.</p>
-        <a class="account-button account-button-primary" href="{% url 'buy_new_license' %}">
+        <p>Операций пока нет.</p>
+        <a class="account-button account-button-primary" href="{% url 'top_up_balance' %}">
             <i data-lucide="plus" aria-hidden="true"></i>
-            <span>Создать токен</span>
+            <span>Пополнить баланс</span>
         </a>
     </section>
 {% endif %}

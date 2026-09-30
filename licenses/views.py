@@ -17,14 +17,25 @@ from datetime import timedelta
 from io import BytesIO
 
 from django.contrib.auth import login
+from .billing import (
+    InsufficientBalance,
+    balance_summary,
+    create_or_extend_license_for_user,
+    get_pricing_options,
+    purchase_token_from_balance,
+    purchase_token_via_external_payment,
+    top_up_balance as apply_top_up_balance,
+)
 from .forms import (
     AdminLicenseForm,
     AdminPaymentForm,
     AdminUserForm,
     LicensePointForm,
     RegisterForm,
+    RecurringTopUpForm,
     ServiceNotificationForm,
     ServiceSettingsForm,
+    TopUpBalanceForm,
 )
 
 from drf_spectacular.utils import extend_schema, OpenApiResponse, OpenApiExample
@@ -34,6 +45,7 @@ from .models import (
     LicenseKey,
     Activation,
     Payment,
+    RecurringTopUpSettings,
     ServiceNotification,
     ServiceSettings,
 )
@@ -42,7 +54,6 @@ from .serializers import (
     CheckRequestSerializer,
     CreateLicenseSerializer,
 )
-from .pricing import PRICING
 
 
 # ============================================================
@@ -335,6 +346,7 @@ def get_cell_selectors(settings_obj):
 
 def account_context(request, **extra):
     service_settings = ServiceSettings.load()
+    billing = balance_summary(request.user)
     active_tokens_count = request.user.licenses.filter(is_active=True).filter(
         Q(expires_at__isnull=True) | Q(expires_at__gt=timezone.now())
     ).count()
@@ -344,7 +356,9 @@ def account_context(request, **extra):
     ).exclude(text='').order_by('-updated_at', '-created_at')
     context = {
         'service_settings': service_settings,
-        'account_balance': 0,
+        'billing_account': billing['account'],
+        'account_balance': billing['balance_display'],
+        'account_balance_kopecks': billing['balance_kopecks'],
         'active_tokens_count': active_tokens_count,
         'download_url': download_path,
         'download_qr_url': reverse('download_qr'),
@@ -380,11 +394,64 @@ def account_dashboard(request):
 
 @login_required
 def payment_history(request):
-    """История платежей."""
-    payments = request.user.payments.all().order_by('-created_at')
+    """История операций по внутреннему счёту."""
+    ledger_entries = request.user.ledger_entries.select_related(
+        'license_key',
+        'payment',
+    ).order_by('-created_at', '-id')
     return render(request, 'licenses/account/payments.html', account_context(
         request,
-        payments=payments,
+        ledger_entries=ledger_entries,
+        account_nav='payments',
+    ))
+
+
+@login_required
+def top_up_balance_view(request):
+    """Пополнение внутреннего счёта и настройка автопополнения."""
+    recurring_settings, _ = RecurringTopUpSettings.objects.get_or_create(user=request.user)
+
+    if request.method == 'POST' and request.POST.get('form_kind') == 'recurring':
+        recurring_form = RecurringTopUpForm(request.POST, instance=recurring_settings)
+        top_up_form = TopUpBalanceForm()
+        if recurring_form.is_valid():
+            recurring_form.save()
+            return redirect('top_up_balance')
+    elif request.method == 'POST':
+        top_up_form = TopUpBalanceForm(request.POST)
+        recurring_form = RecurringTopUpForm(instance=recurring_settings)
+        if top_up_form.is_valid():
+            payment = Payment.objects.create(
+                user=request.user,
+                amount=top_up_form.cleaned_data['amount_rubles'],
+                days=0,
+                operation_type='top_up',
+                status='pending',
+                provider='yookassa',
+                save_payment_method=top_up_form.cleaned_data['save_payment_method'],
+                metadata={'mock_checkout': True},
+            )
+            payment.gateway_payment_id = f'mock-yookassa-{payment.id}'
+            payment.status = 'succeeded'
+            payment.paid_at = timezone.now()
+            payment.save(update_fields=['gateway_payment_id', 'status', 'paid_at'])
+            apply_top_up_balance(
+                request.user,
+                top_up_form.amount_kopecks,
+                payment=payment,
+                operation_type='top_up',
+                comment='Пополнение баланса через ЮKassa',
+            )
+            return redirect('payment_history')
+    else:
+        top_up_form = TopUpBalanceForm()
+        recurring_form = RecurringTopUpForm(instance=recurring_settings)
+
+    return render(request, 'licenses/account/balance.html', account_context(
+        request,
+        top_up_form=top_up_form,
+        recurring_form=recurring_form,
+        recurring_settings=recurring_settings,
         account_nav='payments',
     ))
 
@@ -402,40 +469,43 @@ def buy_license(request, key_id=None):
     if request.method == 'POST':
         days = int(request.POST.get('days', 30))
         point_comment = request.POST.get('point_comment', '').strip()
-        if days not in PRICING:
+        pricing = get_pricing_options()
+        if days not in pricing:
             messages.error(request, 'Неверный тариф')
             return redirect('account_dashboard')
+        payment_flow = request.POST.get('payment_flow', 'provider')
+        save_payment_method = bool(request.POST.get('save_payment_method'))
 
-        payment = Payment.objects.create(
-            user=request.user,
-            license_key=license_key,
-            amount=PRICING[days]['price'],
-            days=days,
-            status='pending'
-        )
+        try:
+            if payment_flow == 'balance':
+                purchase_token_from_balance(
+                    request.user,
+                    days=days,
+                    license_key=license_key,
+                    point_comment=point_comment if is_new else None,
+                )
+            else:
+                purchase_token_via_external_payment(
+                    request.user,
+                    days=days,
+                    license_key=license_key,
+                    point_comment=point_comment if is_new else None,
+                    save_payment_method=save_payment_method,
+                )
+        except InsufficientBalance:
+            messages.error(request, 'Недостаточно средств на балансе.')
+            if key_id:
+                return redirect('buy_license', key_id)
+            return redirect('buy_new_license')
 
-        # ===== ЗАГЛУШКА: сразу помечаем платёж успешным =====
-        # В будущем это будет делать webhook ЮKassa
-        payment.status = 'succeeded'
-        payment.paid_at = timezone.now()
-        payment.save()
-
-        created_key = create_or_extend_license(
-            payment,
-            point_comment=point_comment if is_new else None,
-        )
-
-        messages.success(
-            request,
-            f'Лицензия оформлена на {payment.days} дней. Ключ: {created_key.key}'
-        )
         return redirect('account_dashboard')
 
+    pricing = get_pricing_options()
     return render(request, 'licenses/account/buy.html', account_context(
         request,
         license_key=license_key,
         is_new=is_new,
-        pricing=PRICING,
+        pricing=pricing,
         account_nav='tokens',
     ))
 
@@ -459,6 +529,16 @@ def edit_license_point(request, key_id):
         license_key=license_key,
         account_nav='tokens',
     ))
+
+
+@login_required
+@require_POST
+def toggle_license_auto_renew(request, key_id):
+    """Включение или выключение автопродления токена."""
+    license_key = get_object_or_404(LicenseKey, id=key_id, user=request.user)
+    license_key.auto_renew_enabled = not license_key.auto_renew_enabled
+    license_key.save(update_fields=['auto_renew_enabled'])
+    return redirect('account_dashboard')
 
 
 @login_required
@@ -513,7 +593,7 @@ def account_admin_users(request):
     """Управление пользователями в интерфейсе личного кабинета."""
     ensure_superuser(request.user)
     query = request.GET.get('q', '').strip()
-    users = User.objects.annotate(
+    users = User.objects.select_related('billing_account').annotate(
         licenses_count=Count('licenses', distinct=True),
         payments_count=Count('payments', distinct=True),
     ).order_by('-date_joined', '-id')
@@ -710,6 +790,8 @@ def account_admin_payments(request):
             Q(user__username__icontains=query)
             | Q(user__email__icontains=query)
             | Q(gateway_payment_id__icontains=query)
+            | Q(operation_type__icontains=query)
+            | Q(provider__icontains=query)
             | Q(license_key__key__icontains=query)
         )
         if query.isdigit():
@@ -973,22 +1055,13 @@ def register(request):
 
 def create_or_extend_license(payment, point_comment=None):
     """Создаёт новую лицензию или продлевает существующую по платежу."""
-    if payment.license_key:
-        # Продление существующего ключа
-        license_key = payment.license_key
-        base_date = max(license_key.expires_at or timezone.now(), timezone.now())
-        license_key.expires_at = base_date + timedelta(days=payment.days)
-        license_key.is_active = True
-        license_key.save()
-    else:
-        # Новая лицензия
-        license_key = LicenseKey.objects.create(
-            user=payment.user,
-            point_comment=point_comment or '',
-            expires_at=timezone.now() + timedelta(days=payment.days),
-            is_active=True
-        )
+    license_key = create_or_extend_license_for_user(
+        payment.user,
+        payment.days,
+        license_key=payment.license_key,
+        point_comment=point_comment,
+    )
+    if payment.license_key_id != license_key.id:
         payment.license_key = license_key
-        payment.save()
-
+        payment.save(update_fields=['license_key'])
     return license_key

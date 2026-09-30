@@ -41,6 +41,11 @@
                 {% for error in form.license_key.errors %}<span class="account-field-error">{{ error }}</span>{% endfor %}
             </div>
             <div class="account-field">
+                {{ form.operation_type.label_tag }}
+                {{ form.operation_type }}
+                {% for error in form.operation_type.errors %}<span class="account-field-error">{{ error }}</span>{% endfor %}
+            </div>
+            <div class="account-field">
                 {{ form.amount.label_tag }}
                 {{ form.amount }}
                 {% for error in form.amount.errors %}<span class="account-field-error">{{ error }}</span>{% endfor %}
@@ -56,6 +61,11 @@
                 {% for error in form.status.errors %}<span class="account-field-error">{{ error }}</span>{% endfor %}
             </div>
             <div class="account-field">
+                {{ form.provider.label_tag }}
+                {{ form.provider }}
+                {% for error in form.provider.errors %}<span class="account-field-error">{{ error }}</span>{% endfor %}
+            </div>
+            <div class="account-field">
                 {{ form.paid_at.label_tag }}
                 {{ form.paid_at }}
                 {% for error in form.paid_at.errors %}<span class="account-field-error">{{ error }}</span>{% endfor %}
@@ -65,6 +75,15 @@
                 {{ form.gateway_payment_id }}
                 {% for error in form.gateway_payment_id.errors %}<span class="account-field-error">{{ error }}</span>{% endfor %}
             </div>
+            <div class="account-field account-field-full">
+                {{ form.confirmation_url.label_tag }}
+                {{ form.confirmation_url }}
+                {% for error in form.confirmation_url.errors %}<span class="account-field-error">{{ error }}</span>{% endfor %}
+            </div>
+            <label class="account-checkbox-line account-field-full">
+                {{ form.save_payment_method }}
+                <span>{{ form.save_payment_method.label }}</span>
+            </label>
         </div>
 
         <div class="account-actions">

@@ -29,6 +29,7 @@
             <tr>
                 <th>Пользователь</th>
                 <th>Статус</th>
+                <th>Баланс</th>
                 <th>Токены</th>
                 <th>Платежи</th>
                 <th>Создан</th>
@@ -51,6 +52,13 @@
                             <span class="account-badge">Активен</span>
                         {% else %}
                             <span class="account-badge account-badge-off">Отключён</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if item.billing_account %}
+                            {{ item.billing_account.balance_display }} руб
+                        {% else %}
+                            0 руб
                         {% endif %}
                     </td>
                     <td>{{ item.licenses_count }}</td>

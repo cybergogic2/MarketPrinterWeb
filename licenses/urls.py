@@ -8,8 +8,10 @@ from .views import (
     # Личный кабинет
     account_dashboard,
     payment_history,
+    top_up_balance_view,
     buy_license,
     edit_license_point,
+    toggle_license_auto_renew,
     deactivate_license,
     service_settings,
     account_admin_users,
@@ -47,9 +49,11 @@ urlpatterns = [
     # Личный кабинет
     path('account/', account_dashboard, name='account_dashboard'),
     path('account/payments/', payment_history, name='payment_history'),
+    path('account/balance/top-up/', top_up_balance_view, name='top_up_balance'),
     path('account/buy/', buy_license, name='buy_new_license'),
     path('account/buy/<int:key_id>/', buy_license, name='buy_license'),
     path('account/token/<int:key_id>/edit/', edit_license_point, name='edit_license_point'),
+    path('account/token/<int:key_id>/auto-renew/', toggle_license_auto_renew, name='toggle_license_auto_renew'),
     path('account/token/<int:key_id>/qr.svg', license_token_qr, name='license_token_qr'),
     path('account/token/<int:key_id>/qr.png', license_token_qr_png, name='license_token_qr_png'),
     path('account/deactivate/<int:key_id>/', deactivate_license, name='deactivate_license'),

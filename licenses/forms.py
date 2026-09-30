@@ -5,7 +5,14 @@ from django.contrib.auth.forms import UserCreationForm
 from django.utils import timezone
 import uuid
 
-from .models import LicenseKey, Payment, ServiceNotification, ServiceSettings
+from .billing import rubles_to_kopecks
+from .models import (
+    LicenseKey,
+    Payment,
+    RecurringTopUpSettings,
+    ServiceNotification,
+    ServiceSettings,
+)
 
 
 DATETIME_INPUT_FORMAT = '%Y-%m-%dT%H:%M'
@@ -166,6 +173,75 @@ class LicensePointForm(forms.ModelForm):
         }
 
 
+class TopUpBalanceForm(forms.Form):
+    """Форма пополнения внутреннего счёта."""
+    amount_rubles = forms.IntegerField(
+        label='Сумма пополнения',
+        min_value=1,
+        max_value=500000,
+        widget=forms.NumberInput(attrs={
+            'class': 'account-input',
+            'min': '1',
+            'step': '1',
+            'inputmode': 'numeric',
+        }),
+    )
+    save_payment_method = forms.BooleanField(
+        label='Сохранить способ оплаты для автоплатежей',
+        required=False,
+        widget=forms.CheckboxInput(attrs={'class': 'account-checkbox'}),
+    )
+
+    @property
+    def amount_kopecks(self):
+        return rubles_to_kopecks(self.cleaned_data['amount_rubles'])
+
+
+class RecurringTopUpForm(forms.ModelForm):
+    """Настройки регулярного пополнения баланса."""
+    amount_rubles = forms.IntegerField(
+        label='Сумма автопополнения',
+        required=False,
+        min_value=1,
+        max_value=500000,
+        widget=forms.NumberInput(attrs={
+            'class': 'account-input',
+            'min': '1',
+            'step': '1',
+            'inputmode': 'numeric',
+        }),
+    )
+
+    class Meta:
+        model = RecurringTopUpSettings
+        fields = ('is_enabled', 'amount_rubles')
+        labels = {
+            'is_enabled': 'Включить автопополнение',
+        }
+        widgets = {
+            'is_enabled': forms.CheckboxInput(attrs={'class': 'account-checkbox'}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if self.instance and self.instance.pk and self.instance.amount_kopecks:
+            self.fields['amount_rubles'].initial = self.instance.amount_kopecks // 100
+
+    def clean(self):
+        cleaned_data = super().clean()
+        if cleaned_data.get('is_enabled') and not cleaned_data.get('amount_rubles'):
+            self.add_error('amount_rubles', 'Укажите сумму автопополнения.')
+        return cleaned_data
+
+    def save(self, commit=True):
+        instance = super().save(commit=False)
+        amount_rubles = self.cleaned_data.get('amount_rubles')
+        instance.amount_kopecks = rubles_to_kopecks(amount_rubles or 0)
+        if commit:
+            instance.save()
+        return instance
+
+
 class AdminUserForm(forms.ModelForm):
     """Форма управления пользователем в новом ЛК."""
     password1 = forms.CharField(
@@ -267,11 +343,12 @@ class AdminLicenseForm(forms.ModelForm):
 
     class Meta:
         model = LicenseKey
-        fields = ('user', 'point_comment', 'key', 'is_active', 'expires_at')
+        fields = ('user', 'point_comment', 'key', 'is_active', 'auto_renew_enabled', 'expires_at')
         labels = {
             'user': 'Пользователь',
             'point_comment': 'Адрес пункта выдачи / комментарий',
             'is_active': 'Активна',
+            'auto_renew_enabled': 'Автопродление',
         }
         widgets = {
             'user': forms.Select(attrs={'class': 'account-input'}),
@@ -280,6 +357,7 @@ class AdminLicenseForm(forms.ModelForm):
                 'rows': 3,
             }),
             'is_active': forms.CheckboxInput(attrs={'class': 'account-checkbox'}),
+            'auto_renew_enabled': forms.CheckboxInput(attrs={'class': 'account-checkbox'}),
         }
 
     def clean_key(self):
@@ -314,23 +392,32 @@ class AdminPaymentForm(forms.ModelForm):
         fields = (
             'user',
             'license_key',
+            'operation_type',
             'amount',
             'days',
             'status',
+            'provider',
             'gateway_payment_id',
+            'confirmation_url',
+            'save_payment_method',
             'paid_at',
         )
         labels = {
             'user': 'Пользователь',
             'license_key': 'Лицензия',
+            'operation_type': 'Тип операции',
             'amount': 'Сумма',
             'days': 'Дней',
             'status': 'Статус',
+            'provider': 'Провайдер',
             'gateway_payment_id': 'ID платежа в шлюзе',
+            'confirmation_url': 'Ссылка подтверждения',
+            'save_payment_method': 'Сохранить способ оплаты',
         }
         widgets = {
             'user': forms.Select(attrs={'class': 'account-input'}),
             'license_key': forms.Select(attrs={'class': 'account-input'}),
+            'operation_type': forms.Select(attrs={'class': 'account-input'}),
             'amount': forms.NumberInput(attrs={
                 'class': 'account-input',
                 'min': '0',
@@ -339,7 +426,10 @@ class AdminPaymentForm(forms.ModelForm):
             }),
             'days': forms.NumberInput(attrs={'class': 'account-input', 'min': '1', 'step': '1'}),
             'status': forms.Select(attrs={'class': 'account-input'}),
+            'provider': forms.TextInput(attrs={'class': 'account-input'}),
             'gateway_payment_id': forms.TextInput(attrs={'class': 'account-input'}),
+            'confirmation_url': forms.URLInput(attrs={'class': 'account-input'}),
+            'save_payment_method': forms.CheckboxInput(attrs={'class': 'account-checkbox'}),
         }
 
     def save(self, commit=True):
