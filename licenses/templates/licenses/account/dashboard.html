@@ -87,7 +87,7 @@
                             <i data-lucide="copy" aria-hidden="true"></i>
                             <span>Копировать</span>
                         </button>
-                        <a class="account-token-action" href="{% url 'license_token_qr' lic.id %}" download="token-{{ lic.display_number }}.svg">
+                        <a class="account-token-action" href="{% url 'license_token_qr_png' lic.id %}" download="token-{{ lic.display_number }}.png">
                             <i data-lucide="download" aria-hidden="true"></i>
                             <span>Скачать QR</span>
                         </a>
@@ -95,8 +95,8 @@
                             class="account-token-action"
                             type="button"
                             data-share-qr
-                            data-qr-url="{% url 'license_token_qr' lic.id %}"
-                            data-file-name="token-{{ lic.display_number }}.svg"
+                            data-qr-url="{% url 'license_token_qr_png' lic.id %}"
+                            data-file-name="token-{{ lic.display_number }}.png"
                             data-share-title="QR токена {{ lic.display_number }}"
                         >
                             <i data-lucide="share-2" aria-hidden="true"></i>

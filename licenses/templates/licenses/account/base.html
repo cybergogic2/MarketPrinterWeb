@@ -1182,14 +1182,14 @@
         });
         document.querySelectorAll('[data-share-qr]').forEach(function (button) {
             button.addEventListener('click', function () {
-                if (!navigator.share) {
+                if (!navigator.share || !navigator.canShare || !window.File) {
                     setTemporaryButtonText(button, 'Не поддерживается', 1800);
                     return;
                 }
 
                 var qrUrl = button.getAttribute('data-qr-url') || '';
                 var absoluteQrUrl = new URL(qrUrl, window.location.href).href;
-                var fileName = button.getAttribute('data-file-name') || 'token-qr.svg';
+                var fileName = button.getAttribute('data-file-name') || 'token-qr.png';
                 var shareTitle = button.getAttribute('data-share-title') || 'QR токена';
 
                 fetch(absoluteQrUrl, { credentials: 'same-origin' }).then(function (response) {
@@ -1198,18 +1198,14 @@
                     }
                     return response.blob();
                 }).then(function (blob) {
-                    if (window.File && navigator.canShare) {
-                        var file = new File([blob], fileName, { type: blob.type || 'image/svg+xml' });
-                        if (navigator.canShare({ files: [file] })) {
-                            return navigator.share({
-                                title: shareTitle,
-                                files: [file],
-                            });
-                        }
+                    var file = new File([blob], fileName, { type: blob.type || 'image/png' });
+                    if (!navigator.canShare({ files: [file] })) {
+                        setTemporaryButtonText(button, 'Не поддерживается', 1800);
+                        return null;
                     }
                     return navigator.share({
                         title: shareTitle,
-                        url: absoluteQrUrl,
+                        files: [file],
                     });
                 }).catch(function (error) {
                     if (error && error.name === 'AbortError') {

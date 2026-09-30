@@ -14,6 +14,7 @@ from django.http import HttpResponse, JsonResponse
 from django.urls import reverse
 from django.views.decorators.http import require_POST
 from datetime import timedelta
+from io import BytesIO
 
 from django.contrib.auth import login
 from .forms import (
@@ -913,6 +914,16 @@ def license_token_qr(request, key_id):
     return svg_qr_response(str(license_key.key))
 
 
+@login_required
+def license_token_qr_png(request, key_id):
+    """PNG QR-code с самим токеном пользователя для скачивания и шаринга."""
+    queryset = LicenseKey.objects.all()
+    if not request.user.is_superuser:
+        queryset = queryset.filter(user=request.user)
+    license_key = get_object_or_404(queryset, id=key_id)
+    return png_qr_response(str(license_key.key))
+
+
 def svg_qr_response(value):
     """Render a compact SVG QR response for the provided value."""
     try:
@@ -931,6 +942,16 @@ def svg_qr_response(value):
     response = HttpResponse(content_type='image/svg+xml')
     image.save(response)
     return response
+
+
+def png_qr_response(value):
+    """Render QR as PNG so mobile share dialogs receive an image file."""
+    import qrcode
+
+    image = qrcode.make(value, box_size=10, border=4)
+    buffer = BytesIO()
+    image.save(buffer, format='PNG')
+    return HttpResponse(buffer.getvalue(), content_type='image/png')
 
 
 def register(request):
