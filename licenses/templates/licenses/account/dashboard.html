@@ -6,7 +6,6 @@
 <div class="account-page-head">
     <div>
         <h1>Токены доступа</h1>
-        <p>Создавайте токены для программы и следите за сроком действия.</p>
     </div>
     <a class="account-button account-button-primary" href="{% url 'buy_new_license' %}">
         <i data-lucide="plus" aria-hidden="true"></i>
@@ -20,23 +19,6 @@
             <article class="account-card account-token-row">
                 <div class="account-token-title">
                     <strong class="account-token-number">
-                        {% if lic.status == 'active' %}
-                            <abbr class="account-status-dot account-status-active" title="{{ lic.status_label }}">
-                                <span class="account-sr-only">{{ lic.status_label }}</span>
-                            </abbr>
-                        {% elif lic.status == 'pending' %}
-                            <abbr class="account-status-dot account-status-pending" title="{{ lic.status_label }}">
-                                <span class="account-sr-only">{{ lic.status_label }}</span>
-                            </abbr>
-                        {% elif lic.status == 'expired' %}
-                            <abbr class="account-status-dot account-status-expired" title="{{ lic.status_label }}">
-                                <span class="account-sr-only">{{ lic.status_label }}</span>
-                            </abbr>
-                        {% else %}
-                            <abbr class="account-status-dot account-status-deactivated" title="{{ lic.status_label }}">
-                                <span class="account-sr-only">{{ lic.status_label }}</span>
-                            </abbr>
-                        {% endif %}
                         <span>{{ lic.display_number }}</span>
                     </strong>
                     <span class="account-token-note-line">
@@ -50,6 +32,23 @@
                 </div>
 
                 <span class="account-date">
+                    {% if lic.status == 'active' %}
+                        <abbr class="account-status-dot account-status-active" title="{{ lic.status_label }}">
+                            <span class="account-sr-only">{{ lic.status_label }}</span>
+                        </abbr>
+                    {% elif lic.status == 'pending' %}
+                        <abbr class="account-status-dot account-status-pending" title="{{ lic.status_label }}">
+                            <span class="account-sr-only">{{ lic.status_label }}</span>
+                        </abbr>
+                    {% elif lic.status == 'expired' %}
+                        <abbr class="account-status-dot account-status-expired" title="{{ lic.status_label }}">
+                            <span class="account-sr-only">{{ lic.status_label }}</span>
+                        </abbr>
+                    {% else %}
+                        <abbr class="account-status-dot account-status-deactivated" title="{{ lic.status_label }}">
+                            <span class="account-sr-only">{{ lic.status_label }}</span>
+                        </abbr>
+                    {% endif %}
                     {% if lic.expires_at %}
                         до {{ lic.expires_at|date:"d.m.Y" }}
                     {% else %}
@@ -107,11 +106,6 @@
             </article>
         {% endfor %}
     </section>
-
-    <div class="account-summary-line">
-        <span>Показаны {{ licenses|length }} токенов</span>
-        <span>Активно: {{ active_tokens_count }}</span>
-    </div>
 {% else %}
     <section class="account-empty">
         <p>У вас пока нет токенов.</p>
