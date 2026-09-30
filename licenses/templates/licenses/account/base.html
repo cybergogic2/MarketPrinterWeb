@@ -573,16 +573,18 @@
             gap: 5px;
         }
 
-        .account-token-secret-label {
-            color: var(--account-muted);
-            font-size: 12px;
-        }
-
         .account-token-secret-code {
             overflow-wrap: anywhere;
             font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
             font-size: 13px;
             line-height: 1.45;
+        }
+
+        .account-token-secret-actions {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: flex-end;
+            gap: 8px;
         }
 
         .account-summary-line {
@@ -888,9 +890,10 @@
                 grid-template-columns: 76px minmax(0, 1fr);
             }
 
-            .account-token-secret .account-token-action {
+            .account-token-secret-actions {
                 grid-column: 1 / -1;
                 justify-self: start;
+                justify-content: flex-start;
             }
         }
 
@@ -1156,24 +1159,63 @@
                 }
             });
         }
-        document.querySelectorAll('[data-copy-token]').forEach(function (button) {
+        function setTemporaryButtonText(button, text, delay) {
             var label = button.querySelector('span');
-            var originalText = label ? label.textContent : '';
+            if (!label) {
+                return;
+            }
+            var originalText = label.getAttribute('data-original-text') || label.textContent;
+            label.setAttribute('data-original-text', originalText);
+            label.textContent = text;
+            window.setTimeout(function () {
+                label.textContent = originalText;
+            }, delay || 1600);
+        }
+        document.querySelectorAll('[data-copy-token]').forEach(function (button) {
             button.addEventListener('click', function () {
                 copyText(button.getAttribute('data-token-value') || '').then(function () {
-                    if (label) {
-                        label.textContent = 'Скопировано';
-                        window.setTimeout(function () {
-                            label.textContent = originalText;
-                        }, 1600);
-                    }
+                    setTemporaryButtonText(button, 'Скопировано');
                 }).catch(function () {
-                    if (label) {
-                        label.textContent = 'Не скопировано';
-                        window.setTimeout(function () {
-                            label.textContent = originalText;
-                        }, 1600);
+                    setTemporaryButtonText(button, 'Не скопировано');
+                });
+            });
+        });
+        document.querySelectorAll('[data-share-qr]').forEach(function (button) {
+            button.addEventListener('click', function () {
+                if (!navigator.share) {
+                    setTemporaryButtonText(button, 'Не поддерживается', 1800);
+                    return;
+                }
+
+                var qrUrl = button.getAttribute('data-qr-url') || '';
+                var absoluteQrUrl = new URL(qrUrl, window.location.href).href;
+                var fileName = button.getAttribute('data-file-name') || 'token-qr.svg';
+                var shareTitle = button.getAttribute('data-share-title') || 'QR токена';
+
+                fetch(absoluteQrUrl, { credentials: 'same-origin' }).then(function (response) {
+                    if (!response.ok) {
+                        throw new Error('QR download failed');
                     }
+                    return response.blob();
+                }).then(function (blob) {
+                    if (window.File && navigator.canShare) {
+                        var file = new File([blob], fileName, { type: blob.type || 'image/svg+xml' });
+                        if (navigator.canShare({ files: [file] })) {
+                            return navigator.share({
+                                title: shareTitle,
+                                files: [file],
+                            });
+                        }
+                    }
+                    return navigator.share({
+                        title: shareTitle,
+                        url: absoluteQrUrl,
+                    });
+                }).catch(function (error) {
+                    if (error && error.name === 'AbortError') {
+                        return;
+                    }
+                    setTemporaryButtonText(button, 'Не получилось', 1800);
                 });
             });
         });

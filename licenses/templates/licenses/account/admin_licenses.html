@@ -48,13 +48,13 @@
                     <td>{{ lic.user.username }}</td>
                     <td>
                         {% if lic.status == 'active' %}
-                            <span class="account-status account-status-active">Активна</span>
+                            <span class="account-status account-status-active">Активирован</span>
                         {% elif lic.status == 'pending' %}
-                            <span class="account-status account-status-pending">Ожидает</span>
+                            <span class="account-status account-status-pending">Ожидает активации</span>
                         {% elif lic.status == 'expired' %}
-                            <span class="account-status account-status-expired">Истекла</span>
+                            <span class="account-status account-status-expired">Истёк</span>
                         {% else %}
-                            <span class="account-status account-status-deactivated">Отключена</span>
+                            <span class="account-status account-status-deactivated">Деактивирован</span>
                         {% endif %}
                     </td>
                     <td>{% if lic.expires_at %}{{ lic.expires_at|date:"d.m.Y H:i" }}{% else %}без срока{% endif %}</td>

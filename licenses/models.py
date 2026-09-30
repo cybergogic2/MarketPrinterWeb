@@ -56,9 +56,9 @@ class LicenseKey(models.Model):
     def status_label(self):
         return {
             'pending': 'Ожидает активации',
-            'active': 'Активирована',
-            'expired': 'Истекла',
-            'deactivated': 'Деактивирована',
+            'active': 'Активирован',
+            'expired': 'Истёк',
+            'deactivated': 'Деактивирован',
         }.get(self.status, 'Неизвестно')
 
     @property

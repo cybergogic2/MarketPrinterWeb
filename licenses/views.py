@@ -137,7 +137,7 @@ class CheckView(APIView):
                         value={"valid": True, "expires_at": "2026-10-12T10:30:00Z"}
                     ),
                     OpenApiExample(
-                        "Деактивирована",
+                        "Деактивирован",
                         value={"valid": False, "reason": "deactivated"}
                     ),
                     OpenApiExample(

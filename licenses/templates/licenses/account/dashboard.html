@@ -80,13 +80,29 @@
                         <img src="{% url 'license_token_qr' lic.id %}" alt="QR токена {{ lic.display_number }}">
                     </div>
                     <div class="account-token-secret-text">
-                        <span class="account-token-secret-label">Токен для программы</span>
                         <code class="account-token-secret-code">{{ lic.key }}</code>
                     </div>
-                    <button class="account-token-action" type="button" data-copy-token data-token-value="{{ lic.key }}">
-                        <i data-lucide="copy" aria-hidden="true"></i>
-                        <span>Копировать</span>
-                    </button>
+                    <div class="account-token-secret-actions">
+                        <button class="account-token-action" type="button" data-copy-token data-token-value="{{ lic.key }}">
+                            <i data-lucide="copy" aria-hidden="true"></i>
+                            <span>Копировать</span>
+                        </button>
+                        <a class="account-token-action" href="{% url 'license_token_qr' lic.id %}" download="token-{{ lic.display_number }}.svg">
+                            <i data-lucide="download" aria-hidden="true"></i>
+                            <span>Скачать QR</span>
+                        </a>
+                        <button
+                            class="account-token-action"
+                            type="button"
+                            data-share-qr
+                            data-qr-url="{% url 'license_token_qr' lic.id %}"
+                            data-file-name="token-{{ lic.display_number }}.svg"
+                            data-share-title="QR токена {{ lic.display_number }}"
+                        >
+                            <i data-lucide="share-2" aria-hidden="true"></i>
+                            <span>Поделиться QR</span>
+                        </button>
+                    </div>
                 </div>
             </article>
         {% endfor %}
