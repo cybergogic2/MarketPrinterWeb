@@ -2,7 +2,9 @@ from django import forms
 from django.contrib.auth.models import User
 from django.contrib.auth import password_validation
 from django.contrib.auth.forms import UserCreationForm
+from django.db.models import Q
 from django.utils import timezone
+import re
 import uuid
 
 from .billing import rubles_to_kopecks
@@ -452,10 +454,14 @@ class AdminPaymentForm(forms.ModelForm):
 
 class AdminManualTopUpForm(forms.Form):
     """Ручное пополнение баланса пользователя суперадмином."""
-    user = forms.ModelChoiceField(
+    user_query = forms.CharField(
         label='Пользователь',
-        queryset=User.objects.none(),
-        widget=forms.Select(attrs={'class': 'account-input'}),
+        widget=forms.TextInput(attrs={
+            'class': 'account-input',
+            'list': 'manual-top-up-users',
+            'autocomplete': 'off',
+            'placeholder': 'Начните вводить логин или email',
+        }),
     )
     amount_rubles = forms.IntegerField(
         label='Сумма пополнения',
@@ -480,7 +486,31 @@ class AdminManualTopUpForm(forms.Form):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields['user'].queryset = User.objects.order_by('username', 'id')
+        self.user_options = list(User.objects.order_by('username', 'id'))
+
+    def clean_user_query(self):
+        query = (self.cleaned_data.get('user_query') or '').strip()
+        if not query:
+            raise forms.ValidationError('Выберите пользователя.')
+
+        id_match = re.search(r'#(\d+)\)?$', query)
+        if id_match:
+            user = User.objects.filter(id=int(id_match.group(1))).first()
+            if user:
+                self.cleaned_data['user'] = user
+                return query
+
+        users = User.objects.filter(Q(username__iexact=query) | Q(email__iexact=query))
+        if users.count() == 1:
+            self.cleaned_data['user'] = users.first()
+            return query
+
+        user = User.objects.filter(username__iexact=query.split(' — ', 1)[0]).first()
+        if user:
+            self.cleaned_data['user'] = user
+            return query
+
+        raise forms.ValidationError('Пользователь не найден. Выберите вариант из подсказки.')
 
     @property
     def amount_kopecks(self):
