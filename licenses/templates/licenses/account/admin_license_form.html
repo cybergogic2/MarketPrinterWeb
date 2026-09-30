@@ -41,6 +41,11 @@
                 {% for error in form.expires_at.errors %}<span class="account-field-error">{{ error }}</span>{% endfor %}
             </div>
             <div class="account-field account-field-full">
+                {{ form.point_comment.label_tag }}
+                {{ form.point_comment }}
+                {% for error in form.point_comment.errors %}<span class="account-field-error">{{ error }}</span>{% endfor %}
+            </div>
+            <div class="account-field account-field-full">
                 {{ form.key.label_tag }}
                 {{ form.key }}
                 {% for error in form.key.errors %}<span class="account-field-error">{{ error }}</span>{% endfor %}

@@ -17,12 +17,13 @@ class CheckRequestSerializer(serializers.Serializer):
 class LicenseKeySerializer(serializers.ModelSerializer):
     class Meta:
         model = LicenseKey
-        fields = ['key', 'is_active', 'created_at', 'expires_at']
+        fields = ['key', 'point_comment', 'is_active', 'created_at', 'expires_at']
 
 class CreateLicenseSerializer(serializers.Serializer):
     """Входные данные для создания лицензии."""
     username = serializers.CharField(max_length=150)
     days = serializers.IntegerField(min_value=1, max_value=3650)
+    point_comment = serializers.CharField(max_length=255, required=False, allow_blank=True)
 
     def validate_username(self, value):
         from django.contrib.auth.models import User

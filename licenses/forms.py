@@ -148,6 +148,24 @@ class ServiceNotificationForm(forms.ModelForm):
         }
 
 
+class LicensePointForm(forms.ModelForm):
+    """Форма адреса пункта выдачи или комментария к токену."""
+
+    class Meta:
+        model = LicenseKey
+        fields = ('point_comment',)
+        labels = {
+            'point_comment': 'Адрес пункта выдачи / комментарий',
+        }
+        widgets = {
+            'point_comment': forms.Textarea(attrs={
+                'class': 'account-input account-textarea',
+                'rows': 3,
+                'placeholder': 'Например: ПВЗ на Ленина, 12 или внутренний комментарий',
+            }),
+        }
+
+
 class AdminUserForm(forms.ModelForm):
     """Форма управления пользователем в новом ЛК."""
     password1 = forms.CharField(
@@ -249,13 +267,18 @@ class AdminLicenseForm(forms.ModelForm):
 
     class Meta:
         model = LicenseKey
-        fields = ('user', 'key', 'is_active', 'expires_at')
+        fields = ('user', 'point_comment', 'key', 'is_active', 'expires_at')
         labels = {
             'user': 'Пользователь',
+            'point_comment': 'Адрес пункта выдачи / комментарий',
             'is_active': 'Активна',
         }
         widgets = {
             'user': forms.Select(attrs={'class': 'account-input'}),
+            'point_comment': forms.Textarea(attrs={
+                'class': 'account-input account-textarea',
+                'rows': 3,
+            }),
             'is_active': forms.CheckboxInput(attrs={'class': 'account-checkbox'}),
         }
 

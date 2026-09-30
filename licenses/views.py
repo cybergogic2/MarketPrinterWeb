@@ -8,7 +8,8 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.core.exceptions import PermissionDenied
-from django.db.models import Count, Q
+from django.db.models import Count, F, Q, Window
+from django.db.models.functions import RowNumber
 from django.http import HttpResponse, JsonResponse
 from django.urls import reverse
 from django.views.decorators.http import require_POST
@@ -19,6 +20,7 @@ from .forms import (
     AdminLicenseForm,
     AdminPaymentForm,
     AdminUserForm,
+    LicensePointForm,
     RegisterForm,
     ServiceNotificationForm,
     ServiceSettingsForm,
@@ -237,6 +239,7 @@ class CreateLicenseView(APIView):
                         value={
                             "status": "created",
                             "key": "f7e8d9c0-1234-5678-90ab-cdef12345678",
+                            "number": "100001-01",
                             "username": "ivan_petrov",
                             "expires_at": "2026-10-12T10:30:00Z",
                             "days": 30
@@ -260,17 +263,22 @@ class CreateLicenseView(APIView):
 
         username = serializer.validated_data['username']
         days = serializer.validated_data['days']
+        point_comment = serializer.validated_data.get('point_comment', '').strip()
 
         user = User.objects.get(username=username)
         expires_at = timezone.now() + timedelta(days=days)
 
         license_key = LicenseKey.objects.create(
-            user=user, expires_at=expires_at, is_active=True
+            user=user,
+            point_comment=point_comment,
+            expires_at=expires_at,
+            is_active=True,
         )
 
         return Response({
             'status': 'created',
             'key': str(license_key.key),
+            'number': license_key.display_number,
             'username': user.username,
             'expires_at': expires_at,
             'days': days
@@ -345,10 +353,23 @@ def account_context(request, **extra):
     return context
 
 
+def with_user_token_sequence(queryset):
+    """Annotate licenses with their per-user display sequence."""
+    return queryset.annotate(
+        user_token_sequence=Window(
+            expression=RowNumber(),
+            partition_by=[F('user_id')],
+            order_by=[F('created_at').asc(), F('id').asc()],
+        )
+    )
+
+
 @login_required
 def account_dashboard(request):
     """Личный кабинет: список ключей."""
-    licenses = request.user.licenses.all().order_by('-created_at')
+    licenses = with_user_token_sequence(
+        request.user.licenses.all(),
+    ).order_by('-created_at', '-id')
     return render(request, 'licenses/account/dashboard.html', account_context(
         request,
         licenses=licenses,
@@ -379,6 +400,7 @@ def buy_license(request, key_id=None):
 
     if request.method == 'POST':
         days = int(request.POST.get('days', 30))
+        point_comment = request.POST.get('point_comment', '').strip()
         if days not in PRICING:
             messages.error(request, 'Неверный тариф')
             return redirect('account_dashboard')
@@ -397,7 +419,10 @@ def buy_license(request, key_id=None):
         payment.paid_at = timezone.now()
         payment.save()
 
-        created_key = create_or_extend_license(payment)
+        created_key = create_or_extend_license(
+            payment,
+            point_comment=point_comment if is_new else None,
+        )
 
         messages.success(
             request,
@@ -410,6 +435,27 @@ def buy_license(request, key_id=None):
         license_key=license_key,
         is_new=is_new,
         pricing=PRICING,
+        account_nav='tokens',
+    ))
+
+
+@login_required
+def edit_license_point(request, key_id):
+    """Редактирование адреса пункта выдачи или комментария к токену."""
+    license_key = get_object_or_404(LicenseKey, id=key_id, user=request.user)
+
+    if request.method == 'POST':
+        form = LicensePointForm(request.POST, instance=license_key)
+        if form.is_valid():
+            form.save()
+            return redirect('account_dashboard')
+    else:
+        form = LicensePointForm(instance=license_key)
+
+    return render(request, 'licenses/account/license_point_form.html', account_context(
+        request,
+        form=form,
+        license_key=license_key,
         account_nav='tokens',
     ))
 
@@ -570,6 +616,7 @@ def account_admin_licenses(request):
     if query:
         license_filter = (
             Q(key__icontains=query)
+            | Q(point_comment__icontains=query)
             | Q(user__username__icontains=query)
             | Q(user__email__icontains=query)
         )
@@ -853,6 +900,21 @@ def extension_config(request):
 def download_qr(request):
     """SVG QR-code со ссылкой на скачивание программы."""
     download_url = request.build_absolute_uri(reverse('download'))
+    return svg_qr_response(download_url)
+
+
+@login_required
+def license_token_qr(request, key_id):
+    """SVG QR-code с самим токеном пользователя."""
+    queryset = LicenseKey.objects.all()
+    if not request.user.is_superuser:
+        queryset = queryset.filter(user=request.user)
+    license_key = get_object_or_404(queryset, id=key_id)
+    return svg_qr_response(str(license_key.key))
+
+
+def svg_qr_response(value):
+    """Render a compact SVG QR response for the provided value."""
     try:
         import qrcode
         from qrcode.image.svg import SvgPathImage
@@ -865,7 +927,7 @@ def download_qr(request):
             content_type='image/svg+xml',
         )
 
-    image = qrcode.make(download_url, image_factory=SvgPathImage, box_size=10)
+    image = qrcode.make(value, image_factory=SvgPathImage, box_size=10)
     response = HttpResponse(content_type='image/svg+xml')
     image.save(response)
     return response
@@ -888,7 +950,7 @@ def register(request):
 
     return render(request, 'licenses/auth/register.html', {'form': form})
 
-def create_or_extend_license(payment):
+def create_or_extend_license(payment, point_comment=None):
     """Создаёт новую лицензию или продлевает существующую по платежу."""
     if payment.license_key:
         # Продление существующего ключа
@@ -901,6 +963,7 @@ def create_or_extend_license(payment):
         # Новая лицензия
         license_key = LicenseKey.objects.create(
             user=payment.user,
+            point_comment=point_comment or '',
             expires_at=timezone.now() + timedelta(days=payment.days),
             is_active=True
         )

@@ -15,7 +15,7 @@
 </div>
 
 <form class="account-filter-bar" method="get">
-    <input class="account-input" type="search" name="q" value="{{ query }}" placeholder="Ключ, пользователь, email или ID">
+    <input class="account-input" type="search" name="q" value="{{ query }}" placeholder="Ключ, адрес/комментарий, пользователь, email или ID">
     <button class="account-button account-button-outline" type="submit">
         <i data-lucide="search" aria-hidden="true"></i>
         <span>Найти</span>
@@ -40,8 +40,9 @@
                 <tr>
                     <td>
                         <span class="account-cell-main">
-                            <strong>#{{ lic.id }}</strong>
-                            <span class="account-token-key">{{ lic.key }}</span>
+                            <strong>{{ lic.display_number }}</strong>
+                            <span class="account-token-key">{% if lic.point_comment %}{{ lic.point_comment }}{% else %}Комментарий не указан{% endif %}</span>
+                            <span class="account-muted">{{ lic.key }}</span>
                         </span>
                     </td>
                     <td>{{ lic.user.username }}</td>

@@ -38,6 +38,13 @@
 <form method="post" class="account-form account-pricing">
     {% csrf_token %}
 
+    {% if is_new %}
+        <div class="account-field">
+            <label for="id_point_comment">Адрес пункта выдачи / комментарий</label>
+            <textarea class="account-input account-textarea" id="id_point_comment" name="point_comment" rows="3" placeholder="Например: ПВЗ на Ленина, 12 или внутренний комментарий">{{ request.POST.point_comment }}</textarea>
+        </div>
+    {% endif %}
+
     {% for days, info in pricing.items %}
         <label class="account-card account-pricing-option">
             <span class="account-pricing-option-inner">

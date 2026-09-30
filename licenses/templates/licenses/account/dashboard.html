@@ -19,19 +19,35 @@
         {% for lic in licenses %}
             <article class="account-card account-token-row">
                 <div class="account-token-title">
-                    <strong>Токен #{{ lic.id }}</strong>
-                    <span class="account-token-key">{{ lic.key }}</span>
+                    <strong class="account-token-number">
+                        {% if lic.status == 'active' %}
+                            <abbr class="account-status-dot account-status-active" title="{{ lic.status_label }}">
+                                <span class="account-sr-only">{{ lic.status_label }}</span>
+                            </abbr>
+                        {% elif lic.status == 'pending' %}
+                            <abbr class="account-status-dot account-status-pending" title="{{ lic.status_label }}">
+                                <span class="account-sr-only">{{ lic.status_label }}</span>
+                            </abbr>
+                        {% elif lic.status == 'expired' %}
+                            <abbr class="account-status-dot account-status-expired" title="{{ lic.status_label }}">
+                                <span class="account-sr-only">{{ lic.status_label }}</span>
+                            </abbr>
+                        {% else %}
+                            <abbr class="account-status-dot account-status-deactivated" title="{{ lic.status_label }}">
+                                <span class="account-sr-only">{{ lic.status_label }}</span>
+                            </abbr>
+                        {% endif %}
+                        <span>{{ lic.display_number }}</span>
+                    </strong>
+                    <span class="account-token-note-line">
+                        <span class="account-token-key" title="{% if lic.point_comment %}{{ lic.point_comment }}{% else %}Адрес пункта выдачи / комментарий не указан{% endif %}">
+                            {% if lic.point_comment %}{{ lic.point_comment }}{% else %}Адрес пункта выдачи / комментарий не указан{% endif %}
+                        </span>
+                        <a class="account-icon-button account-token-note-edit" href="{% url 'edit_license_point' lic.id %}" aria-label="Редактировать адрес или комментарий">
+                            <i data-lucide="pencil" aria-hidden="true"></i>
+                        </a>
+                    </span>
                 </div>
-
-                {% if lic.status == 'active' %}
-                    <span class="account-status account-status-active">Активен</span>
-                {% elif lic.status == 'pending' %}
-                    <span class="account-status account-status-pending">Ожидает</span>
-                {% elif lic.status == 'expired' %}
-                    <span class="account-status account-status-expired">Истёк</span>
-                {% else %}
-                    <span class="account-status account-status-deactivated">Отключён</span>
-                {% endif %}
 
                 <span class="account-date">
                     {% if lic.expires_at %}
@@ -40,6 +56,11 @@
                         без срока
                     {% endif %}
                 </span>
+
+                <button class="account-token-action account-token-reveal" type="button" data-token-toggle aria-expanded="false" aria-controls="token-secret-{{ lic.id }}">
+                    <i data-lucide="qr-code" aria-hidden="true"></i>
+                    <span>Токен</span>
+                </button>
 
                 <div class="account-token-actions">
                     <a class="account-token-action" href="{% url 'buy_license' lic.id %}">
@@ -52,6 +73,20 @@
                             <span>Деактивировать</span>
                         </a>
                     {% endif %}
+                </div>
+
+                <div class="account-token-secret" id="token-secret-{{ lic.id }}" data-token-panel hidden>
+                    <div class="account-token-secret-qr">
+                        <img src="{% url 'license_token_qr' lic.id %}" alt="QR токена {{ lic.display_number }}">
+                    </div>
+                    <div class="account-token-secret-text">
+                        <span class="account-token-secret-label">Токен для программы</span>
+                        <code class="account-token-secret-code">{{ lic.key }}</code>
+                    </div>
+                    <button class="account-token-action" type="button" data-copy-token data-token-value="{{ lic.key }}">
+                        <i data-lucide="copy" aria-hidden="true"></i>
+                        <span>Копировать</span>
+                    </button>
                 </div>
             </article>
         {% endfor %}

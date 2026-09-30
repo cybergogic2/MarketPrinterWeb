@@ -4,9 +4,9 @@ from .models import LicenseKey, Activation, ServiceNotification, ServiceSettings
 
 @admin.register(LicenseKey)
 class LicenseKeyAdmin(admin.ModelAdmin):
-    list_display = ('key', 'user', 'is_active', 'created_at', 'expires_at')
+    list_display = ('display_number', 'key', 'point_comment', 'user', 'is_active', 'created_at', 'expires_at')
     list_filter = ('is_active',)
-    search_fields = ('key', 'user__username')
+    search_fields = ('key', 'point_comment', 'user__username')
 
 
 @admin.register(Activation)

@@ -9,6 +9,7 @@ from .views import (
     account_dashboard,
     payment_history,
     buy_license,
+    edit_license_point,
     deactivate_license,
     service_settings,
     account_admin_users,
@@ -30,6 +31,7 @@ from .views import (
     notification_toggle,
     extension_config,
     download_qr,
+    license_token_qr,
     # Аутентификация
     register,
 )
@@ -46,6 +48,8 @@ urlpatterns = [
     path('account/payments/', payment_history, name='payment_history'),
     path('account/buy/', buy_license, name='buy_new_license'),
     path('account/buy/<int:key_id>/', buy_license, name='buy_license'),
+    path('account/token/<int:key_id>/edit/', edit_license_point, name='edit_license_point'),
+    path('account/token/<int:key_id>/qr.svg', license_token_qr, name='license_token_qr'),
     path('account/deactivate/<int:key_id>/', deactivate_license, name='deactivate_license'),
     path('account/admin/users/', account_admin_users, name='account_admin_users'),
     path('account/admin/users/new/', account_admin_user_create, name='account_admin_user_create'),
