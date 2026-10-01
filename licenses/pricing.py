@@ -1,6 +1,7 @@
 # licenses/pricing.py
 PRICING = {
-    30: {'price': 290, 'label': '1 месяц'},
-    90: {'price': 790, 'label': '3 месяца'},
-    365: {'price': 2490, 'label': '1 год'},
+    30: {'settings_field': 'token_price', 'label': '1 месяц'},
+    90: {'settings_field': 'token_price_3_months', 'label': '3 месяца'},
+    180: {'settings_field': 'token_price_6_months', 'label': '6 месяцев'},
+    365: {'settings_field': 'token_price_12_months', 'label': '12 месяцев'},
 }

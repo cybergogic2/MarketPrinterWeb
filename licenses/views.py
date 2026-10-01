@@ -476,6 +476,7 @@ def buy_license(request, key_id=None):
             return redirect('account_dashboard')
         payment_flow = request.POST.get('payment_flow', 'provider')
         save_payment_method = bool(request.POST.get('save_payment_method'))
+        enable_auto_renew = bool(request.POST.get('enable_auto_renew'))
 
         try:
             if payment_flow == 'balance':
@@ -484,6 +485,7 @@ def buy_license(request, key_id=None):
                     days=days,
                     license_key=license_key,
                     point_comment=point_comment if is_new else None,
+                    enable_auto_renew=enable_auto_renew,
                 )
             else:
                 purchase_token_via_external_payment(
@@ -492,6 +494,7 @@ def buy_license(request, key_id=None):
                     license_key=license_key,
                     point_comment=point_comment if is_new else None,
                     save_payment_method=save_payment_method,
+                    enable_auto_renew=enable_auto_renew,
                 )
         except InsufficientBalance:
             messages.error(request, 'Недостаточно средств на балансе.')

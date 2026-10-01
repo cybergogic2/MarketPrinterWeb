@@ -116,12 +116,21 @@ class RegisterForm(UserCreationForm):
 
 class ServiceSettingsForm(forms.ModelForm):
     """Форма настроек, доступная только суперпользователю."""
+    price_fields = (
+        'token_price',
+        'token_price_3_months',
+        'token_price_6_months',
+        'token_price_12_months',
+    )
 
     class Meta:
         model = ServiceSettings
         fields = (
             'service_name',
             'token_price',
+            'token_price_3_months',
+            'token_price_6_months',
+            'token_price_12_months',
             'company_name',
             'ogrnip',
             'inn',
@@ -139,7 +148,10 @@ class ServiceSettingsForm(forms.ModelForm):
         )
         labels = {
             'service_name': 'Название сервиса',
-            'token_price': 'Стоимость токена',
+            'token_price': 'Стоимость токена за 1 мес.',
+            'token_price_3_months': 'Стоимость токена за 3 мес.',
+            'token_price_6_months': 'Стоимость токена за 6 мес.',
+            'token_price_12_months': 'Стоимость токена за 12 мес.',
             'company_name': 'ИП',
             'ogrnip': 'ОГРНИП',
             'inn': 'ИНН',
@@ -177,6 +189,24 @@ class ServiceSettingsForm(forms.ModelForm):
                 'step': '1',
                 'inputmode': 'numeric',
             }),
+            'token_price_3_months': forms.NumberInput(attrs={
+                'class': 'account-input',
+                'min': '0',
+                'step': '1',
+                'inputmode': 'numeric',
+            }),
+            'token_price_6_months': forms.NumberInput(attrs={
+                'class': 'account-input',
+                'min': '0',
+                'step': '1',
+                'inputmode': 'numeric',
+            }),
+            'token_price_12_months': forms.NumberInput(attrs={
+                'class': 'account-input',
+                'min': '0',
+                'step': '1',
+                'inputmode': 'numeric',
+            }),
             'company_name': forms.TextInput(attrs={'class': 'account-input'}),
             'ogrnip': forms.TextInput(attrs={'class': 'account-input'}),
             'inn': forms.TextInput(attrs={'class': 'account-input'}),
@@ -192,6 +222,18 @@ class ServiceSettingsForm(forms.ModelForm):
             'cell_number_id': forms.TextInput(attrs={'class': 'account-input account-code-input'}),
             'cell_extra_selector': forms.TextInput(attrs={'class': 'account-input account-code-input'}),
         }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for field_name in self.price_fields:
+            self.fields[field_name].required = False
+
+    def clean(self):
+        cleaned_data = super().clean()
+        for field_name in self.price_fields:
+            if cleaned_data.get(field_name) is None:
+                cleaned_data[field_name] = 0
+        return cleaned_data
 
 
 class ServiceNotificationForm(forms.ModelForm):

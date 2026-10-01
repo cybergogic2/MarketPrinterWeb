@@ -22,6 +22,7 @@ class LicenseKey(models.Model):
     point_comment = models.CharField(max_length=255, blank=True)
     is_active = models.BooleanField(default=True)
     auto_renew_enabled = models.BooleanField(default=False)
+    auto_renew_days = models.PositiveIntegerField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     expires_at = models.DateTimeField(null=True, blank=True)
 
@@ -350,7 +351,10 @@ class ServiceSettings(models.Model):
     """Настройки сервиса, которые редактирует суперпользователь."""
     singleton_id = models.PositiveSmallIntegerField(default=1, unique=True, editable=False)
     service_name = models.CharField(max_length=120, default='Magic ПВЗ')
-    token_price = models.IntegerField(default=0, validators=[MinValueValidator(0)])
+    token_price = models.IntegerField(default=0, blank=True, validators=[MinValueValidator(0)])
+    token_price_3_months = models.IntegerField(default=0, blank=True, validators=[MinValueValidator(0)])
+    token_price_6_months = models.IntegerField(default=0, blank=True, validators=[MinValueValidator(0)])
+    token_price_12_months = models.IntegerField(default=0, blank=True, validators=[MinValueValidator(0)])
     company_name = models.CharField(max_length=255, blank=True)
     inn = models.CharField(max_length=32, blank=True)
     ogrnip = models.CharField(max_length=32, blank=True)

@@ -35,46 +35,57 @@
     </section>
 {% endif %}
 
-<form method="post" class="account-form account-pricing">
-    {% csrf_token %}
+{% if pricing %}
+    <form method="post" class="account-form account-pricing">
+        {% csrf_token %}
 
-    {% if is_new %}
-        <div class="account-field">
-            <label for="id_point_comment">Адрес пункта выдачи / комментарий</label>
-            <textarea class="account-input account-textarea" id="id_point_comment" name="point_comment" rows="3" placeholder="Например: ПВЗ на Ленина, 12 или внутренний комментарий">{{ request.POST.point_comment }}</textarea>
-        </div>
-    {% endif %}
+        {% if is_new %}
+            <div class="account-field">
+                <label for="id_point_comment">Адрес пункта выдачи / комментарий</label>
+                <textarea class="account-input account-textarea" id="id_point_comment" name="point_comment" rows="3" placeholder="Например: ПВЗ на Ленина, 12 или внутренний комментарий">{{ request.POST.point_comment }}</textarea>
+            </div>
+        {% endif %}
 
-    {% for days, info in pricing.items %}
-        <label class="account-card account-pricing-option">
-            <span class="account-pricing-option-inner">
-                <span class="account-pricing-label">
-                    <input type="radio" name="days" value="{{ days }}" {% if forloop.first %}checked{% endif %}>
-                    <span>{{ info.label }}</span>
+        {% for days, info in pricing.items %}
+            <label class="account-card account-pricing-option">
+                <span class="account-pricing-option-inner">
+                    <span class="account-pricing-label">
+                        <input type="radio" name="days" value="{{ days }}" {% if forloop.first %}checked{% endif %}>
+                        <span>{{ info.label }}</span>
+                    </span>
+                    <span class="account-price">{{ info.price }}₽</span>
                 </span>
-                <span class="account-price">{{ info.price }}₽</span>
-            </span>
+            </label>
+        {% endfor %}
+
+        <label class="account-checkbox-line">
+            <input class="account-checkbox" type="checkbox" name="enable_auto_renew" value="1" {% if not is_new and license_key.auto_renew_enabled %}checked{% endif %}>
+            <span>Включить автопродление на выбранный срок</span>
         </label>
-    {% endfor %}
 
-    <label class="account-checkbox-line">
-        <input class="account-checkbox" type="checkbox" name="save_payment_method" value="1">
-        <span>Сохранить способ оплаты для автоплатежей</span>
-    </label>
+        <label class="account-checkbox-line">
+            <input class="account-checkbox" type="checkbox" name="save_payment_method" value="1">
+            <span>Сохранить способ оплаты для автоплатежей</span>
+        </label>
 
-    <div class="account-actions">
-        <button class="account-button account-button-outline" type="submit" name="payment_flow" value="balance">
-            <i data-lucide="wallet" aria-hidden="true"></i>
-            <span>Списать с баланса</span>
-        </button>
-        <button class="account-button account-button-primary" type="submit" name="payment_flow" value="provider">
-            <i data-lucide="credit-card" aria-hidden="true"></i>
-            <span>Оплатить через ЮKassa</span>
-        </button>
-    </div>
-</form>
+        <div class="account-actions">
+            <button class="account-button account-button-outline" type="submit" name="payment_flow" value="balance">
+                <i data-lucide="wallet" aria-hidden="true"></i>
+                <span>Списать с баланса</span>
+            </button>
+            <button class="account-button account-button-primary" type="submit" name="payment_flow" value="provider">
+                <i data-lucide="credit-card" aria-hidden="true"></i>
+                <span>Оплатить через ЮKassa</span>
+            </button>
+        </div>
+    </form>
 
-<p class="account-note">
-    Через ЮKassa можно оплатить любым доступным для магазина способом. В учёте сумма сначала зачисляется на баланс, затем списывается за токен.
-</p>
+    <p class="account-note">
+        Через ЮKassa можно оплатить любым доступным для магазина способом. В учёте сумма сначала зачисляется на баланс, затем списывается за токен.
+    </p>
+{% else %}
+    <section class="account-empty">
+        <p>Тарифы пока не настроены.</p>
+    </section>
+{% endif %}
 {% endblock %}

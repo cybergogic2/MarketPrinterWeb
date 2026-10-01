@@ -33,10 +33,31 @@
                     {{ form.service_name }}
                     {% for error in form.service_name.errors %}<span class="account-field-error">{{ error }}</span>{% endfor %}
                 </div>
+            </div>
+        </section>
+
+        <section class="account-settings-block">
+            <h2>Финансы</h2>
+            <div class="account-form-grid">
                 <div class="account-field">
                     {{ form.token_price.label_tag }}
                     {{ form.token_price }}
                     {% for error in form.token_price.errors %}<span class="account-field-error">{{ error }}</span>{% endfor %}
+                </div>
+                <div class="account-field">
+                    {{ form.token_price_3_months.label_tag }}
+                    {{ form.token_price_3_months }}
+                    {% for error in form.token_price_3_months.errors %}<span class="account-field-error">{{ error }}</span>{% endfor %}
+                </div>
+                <div class="account-field">
+                    {{ form.token_price_6_months.label_tag }}
+                    {{ form.token_price_6_months }}
+                    {% for error in form.token_price_6_months.errors %}<span class="account-field-error">{{ error }}</span>{% endfor %}
+                </div>
+                <div class="account-field">
+                    {{ form.token_price_12_months.label_tag }}
+                    {{ form.token_price_12_months }}
+                    {% for error in form.token_price_12_months.errors %}<span class="account-field-error">{{ error }}</span>{% endfor %}
                 </div>
             </div>
         </section>

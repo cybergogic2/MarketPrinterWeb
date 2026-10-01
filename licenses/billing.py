@@ -36,15 +36,15 @@ def get_billing_account(user):
 
 
 def get_pricing_options():
-    """Return tariffs, using service token price for a monthly token when configured."""
+    """Return tariffs configured in service settings."""
     settings_obj = ServiceSettings.load()
     pricing = {}
     for days, info in PRICING.items():
-        price = info['price']
-        if days == 30 and settings_obj.token_price:
-            price = settings_obj.token_price
+        price = getattr(settings_obj, info['settings_field'], 0) or 0
+        if price <= 0:
+            continue
         pricing[days] = {
-            **info,
+            'label': info['label'],
             'price': price,
             'price_kopecks': rubles_to_kopecks(price),
         }
@@ -58,20 +58,34 @@ def get_price_for_days(days):
     return pricing[days]['price_kopecks']
 
 
-def create_or_extend_license_for_user(user, days, license_key=None, point_comment=None):
+def create_or_extend_license_for_user(
+    user,
+    days,
+    license_key=None,
+    point_comment=None,
+    enable_auto_renew=False,
+):
     if license_key:
         base_date = max(license_key.expires_at or timezone.now(), timezone.now())
         license_key.expires_at = base_date + timedelta(days=days)
         license_key.is_active = True
-        license_key.save(update_fields=['expires_at', 'is_active'])
+        update_fields = ['expires_at', 'is_active']
+        if enable_auto_renew:
+            license_key.auto_renew_enabled = True
+            license_key.auto_renew_days = days
+            update_fields.extend(['auto_renew_enabled', 'auto_renew_days'])
+        license_key.save(update_fields=update_fields)
         return license_key
 
-    return LicenseKey.objects.create(
+    license_key = LicenseKey.objects.create(
         user=user,
         point_comment=point_comment or '',
         expires_at=timezone.now() + timedelta(days=days),
         is_active=True,
+        auto_renew_enabled=enable_auto_renew,
+        auto_renew_days=days if enable_auto_renew else None,
     )
+    return license_key
 
 
 def create_ledger_entry(
@@ -137,7 +151,14 @@ def top_up_balance(user, amount_kopecks, *, payment=None, operation_type='top_up
 
 
 @transaction.atomic
-def purchase_token_from_balance(user, *, days, license_key=None, point_comment=None):
+def purchase_token_from_balance(
+    user,
+    *,
+    days,
+    license_key=None,
+    point_comment=None,
+    enable_auto_renew=False,
+):
     price_kopecks = get_price_for_days(days)
     account, _ = BillingAccount.objects.select_for_update().get_or_create(user=user)
     operation_type = 'token_renewal' if license_key else 'token_purchase'
@@ -156,6 +177,7 @@ def purchase_token_from_balance(user, *, days, license_key=None, point_comment=N
         days,
         license_key=license_key,
         point_comment=point_comment,
+        enable_auto_renew=enable_auto_renew,
     )
     create_ledger_entry(
         account=account,
@@ -174,7 +196,15 @@ def purchase_token_from_balance(user, *, days, license_key=None, point_comment=N
 
 
 @transaction.atomic
-def purchase_token_via_external_payment(user, *, days, license_key=None, point_comment=None, save_payment_method=False):
+def purchase_token_via_external_payment(
+    user,
+    *,
+    days,
+    license_key=None,
+    point_comment=None,
+    save_payment_method=False,
+    enable_auto_renew=False,
+):
     price_kopecks = get_price_for_days(days)
     amount_rubles = kopecks_to_rubles(price_kopecks)
     operation_type = 'token_renewal' if license_key else 'token_purchase'
@@ -186,10 +216,12 @@ def purchase_token_via_external_payment(user, *, days, license_key=None, point_c
         operation_type=operation_type,
         status='pending',
         provider='yookassa',
-        save_payment_method=save_payment_method,
+        save_payment_method=save_payment_method or enable_auto_renew,
         metadata={
             'mock_checkout': True,
             'accounting': 'credit_then_debit',
+            'enable_auto_renew': enable_auto_renew,
+            'auto_renew_days': days if enable_auto_renew else None,
         },
     )
     payment.gateway_payment_id = f'mock-yookassa-{payment.id}'
@@ -225,6 +257,7 @@ def purchase_token_via_external_payment(user, *, days, license_key=None, point_c
         days,
         license_key=license_key,
         point_comment=point_comment,
+        enable_auto_renew=enable_auto_renew,
     )
     create_ledger_entry(
         account=account,
