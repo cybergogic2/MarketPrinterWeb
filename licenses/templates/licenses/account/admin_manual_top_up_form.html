@@ -30,16 +30,7 @@
         {% endif %}
 
         <div class="account-form-grid">
-            <div class="account-field">
-                {{ form.user_query.label_tag }}
-                {{ form.user_query }}
-                <datalist id="manual-top-up-users">
-                    {% for user_option in form.user_options %}
-                        <option value="{{ user_option.username }}{% if user_option.email %} — {{ user_option.email }}{% endif %} (#{{ user_option.id }})"></option>
-                    {% endfor %}
-                </datalist>
-                {% for error in form.user_query.errors %}<span class="account-field-error">{{ error }}</span>{% endfor %}
-            </div>
+            {% include 'licenses/account/_user_search_field.html' %}
             <div class="account-field">
                 {{ form.amount_rubles.label_tag }}
                 {{ form.amount_rubles }}

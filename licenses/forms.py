@@ -20,6 +20,62 @@ from .models import (
 DATETIME_INPUT_FORMAT = '%Y-%m-%dT%H:%M'
 
 
+def format_user_search_option(user):
+    label = user.get_username()
+    if user.email:
+        label = f'{label} — {user.email}'
+    return f'{label} (#{user.id})'
+
+
+def resolve_user_search_query(query):
+    query = (query or '').strip()
+    if not query:
+        raise forms.ValidationError('Выберите пользователя.')
+
+    id_match = re.search(r'#(\d+)\)?$', query)
+    if id_match:
+        user = User.objects.filter(id=int(id_match.group(1))).first()
+        if user:
+            return user
+
+    users = User.objects.filter(Q(username__iexact=query) | Q(email__iexact=query))
+    if users.count() == 1:
+        return users.first()
+
+    username = query.split(' — ', 1)[0].strip()
+    user = User.objects.filter(username__iexact=username).first()
+    if user:
+        return user
+
+    raise forms.ValidationError('Пользователь не найден. Выберите вариант из подсказки.')
+
+
+def user_search_field():
+    return forms.CharField(
+        label='Пользователь',
+        widget=forms.TextInput(attrs={
+            'class': 'account-input',
+            'autocomplete': 'off',
+            'placeholder': 'Начните вводить логин или email',
+        }),
+    )
+
+
+class SearchableUserFieldMixin:
+    user_datalist_id = 'account-user-options'
+
+    def setup_user_search_field(self, selected_user=None):
+        self.user_options = list(User.objects.order_by('username', 'id'))
+        self.fields['user_query'].widget.attrs['list'] = self.user_datalist_id
+        if selected_user and not self.is_bound:
+            self.fields['user_query'].initial = format_user_search_option(selected_user)
+
+    def clean_user_query(self):
+        user = resolve_user_search_query(self.cleaned_data.get('user_query'))
+        self.cleaned_data['user'] = user
+        return self.cleaned_data['user_query']
+
+
 class RegisterForm(UserCreationForm):
     """Форма регистрации нового пользователя."""
     email = forms.EmailField(
@@ -325,8 +381,9 @@ class AdminUserForm(forms.ModelForm):
         return user
 
 
-class AdminLicenseForm(forms.ModelForm):
+class AdminLicenseForm(SearchableUserFieldMixin, forms.ModelForm):
     """Форма управления лицензией."""
+    user_query = user_search_field()
     key = forms.CharField(
         label='Ключ',
         required=False,
@@ -345,15 +402,13 @@ class AdminLicenseForm(forms.ModelForm):
 
     class Meta:
         model = LicenseKey
-        fields = ('user', 'point_comment', 'key', 'is_active', 'auto_renew_enabled', 'expires_at')
+        fields = ('user_query', 'point_comment', 'key', 'is_active', 'auto_renew_enabled', 'expires_at')
         labels = {
-            'user': 'Пользователь',
             'point_comment': 'Адрес пункта выдачи / комментарий',
             'is_active': 'Активна',
             'auto_renew_enabled': 'Автопродление',
         }
         widgets = {
-            'user': forms.Select(attrs={'class': 'account-input'}),
             'point_comment': forms.Textarea(attrs={
                 'class': 'account-input account-textarea',
                 'rows': 3,
@@ -368,11 +423,21 @@ class AdminLicenseForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields['user'].queryset = User.objects.order_by('username', 'id')
+        selected_user = self.instance.user if self.instance and self.instance.pk else None
+        self.setup_user_search_field(selected_user=selected_user)
+
+    def save(self, commit=True):
+        license_key = super().save(commit=False)
+        license_key.user = self.cleaned_data['user']
+        if commit:
+            license_key.save()
+            self.save_m2m()
+        return license_key
 
 
-class AdminPaymentForm(forms.ModelForm):
+class AdminPaymentForm(SearchableUserFieldMixin, forms.ModelForm):
     """Форма управления платежом."""
+    user_query = user_search_field()
     license_key = forms.ModelChoiceField(
         label='Лицензия',
         queryset=LicenseKey.objects.all(),
@@ -392,7 +457,7 @@ class AdminPaymentForm(forms.ModelForm):
     class Meta:
         model = Payment
         fields = (
-            'user',
+            'user_query',
             'license_key',
             'operation_type',
             'amount',
@@ -405,7 +470,6 @@ class AdminPaymentForm(forms.ModelForm):
             'paid_at',
         )
         labels = {
-            'user': 'Пользователь',
             'license_key': 'Лицензия',
             'operation_type': 'Тип операции',
             'amount': 'Сумма',
@@ -417,7 +481,6 @@ class AdminPaymentForm(forms.ModelForm):
             'save_payment_method': 'Сохранить способ оплаты',
         }
         widgets = {
-            'user': forms.Select(attrs={'class': 'account-input'}),
             'license_key': forms.Select(attrs={'class': 'account-input'}),
             'operation_type': forms.Select(attrs={'class': 'account-input'}),
             'amount': forms.NumberInput(attrs={
@@ -436,6 +499,7 @@ class AdminPaymentForm(forms.ModelForm):
 
     def save(self, commit=True):
         payment = super().save(commit=False)
+        payment.user = self.cleaned_data['user']
         if payment.status == 'succeeded' and not payment.paid_at:
             payment.paid_at = timezone.now()
         if payment.status != 'succeeded':
@@ -446,23 +510,16 @@ class AdminPaymentForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields['user'].queryset = User.objects.order_by('username', 'id')
+        selected_user = self.instance.user if self.instance and self.instance.pk else None
+        self.setup_user_search_field(selected_user=selected_user)
         self.fields['license_key'].queryset = LicenseKey.objects.select_related(
             'user',
         ).order_by('-created_at', '-id')
 
 
-class AdminManualTopUpForm(forms.Form):
+class AdminManualTopUpForm(SearchableUserFieldMixin, forms.Form):
     """Ручное пополнение баланса пользователя суперадмином."""
-    user_query = forms.CharField(
-        label='Пользователь',
-        widget=forms.TextInput(attrs={
-            'class': 'account-input',
-            'list': 'manual-top-up-users',
-            'autocomplete': 'off',
-            'placeholder': 'Начните вводить логин или email',
-        }),
-    )
+    user_query = user_search_field()
     amount_rubles = forms.IntegerField(
         label='Сумма пополнения',
         min_value=1,
@@ -486,31 +543,7 @@ class AdminManualTopUpForm(forms.Form):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.user_options = list(User.objects.order_by('username', 'id'))
-
-    def clean_user_query(self):
-        query = (self.cleaned_data.get('user_query') or '').strip()
-        if not query:
-            raise forms.ValidationError('Выберите пользователя.')
-
-        id_match = re.search(r'#(\d+)\)?$', query)
-        if id_match:
-            user = User.objects.filter(id=int(id_match.group(1))).first()
-            if user:
-                self.cleaned_data['user'] = user
-                return query
-
-        users = User.objects.filter(Q(username__iexact=query) | Q(email__iexact=query))
-        if users.count() == 1:
-            self.cleaned_data['user'] = users.first()
-            return query
-
-        user = User.objects.filter(username__iexact=query.split(' — ', 1)[0]).first()
-        if user:
-            self.cleaned_data['user'] = user
-            return query
-
-        raise forms.ValidationError('Пользователь не найден. Выберите вариант из подсказки.')
+        self.setup_user_search_field()
 
     @property
     def amount_kopecks(self):

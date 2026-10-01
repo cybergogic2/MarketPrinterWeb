@@ -1,0 +1,10 @@
+<div class="account-field">
+    {{ form.user_query.label_tag }}
+    {{ form.user_query }}
+    <datalist id="{{ form.user_datalist_id }}">
+        {% for user_option in form.user_options %}
+            <option value="{{ user_option.username }}{% if user_option.email %} — {{ user_option.email }}{% endif %} (#{{ user_option.id }})"></option>
+        {% endfor %}
+    </datalist>
+    {% for error in form.user_query.errors %}<span class="account-field-error">{{ error }}</span>{% endfor %}
+</div>
