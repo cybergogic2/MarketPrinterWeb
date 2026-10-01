@@ -43,7 +43,6 @@
                         <span class="account-cell-main">
                             <strong>{{ lic.display_number }}</strong>
                             <span class="account-token-key">{% if lic.point_comment %}{{ lic.point_comment }}{% else %}Комментарий не указан{% endif %}</span>
-                            <span class="account-muted">{{ lic.key }}</span>
                         </span>
                     </td>
                     <td>{{ lic.user.username }}</td>
@@ -69,12 +68,49 @@
                     <td>{{ lic.created_at|date:"d.m.Y H:i" }}</td>
                     <td>
                         <div class="account-table-actions">
+                            <button class="account-token-action account-token-reveal" type="button" data-token-toggle aria-expanded="false" aria-controls="admin-token-secret-{{ lic.id }}">
+                                <i data-lucide="qr-code" aria-hidden="true"></i>
+                                <span>Токен</span>
+                            </button>
                             <a class="account-icon-button" href="{% url 'account_admin_license_edit' lic.id %}" aria-label="Редактировать лицензию">
                                 <i data-lucide="pencil" aria-hidden="true"></i>
                             </a>
                             <a class="account-icon-button" href="{% url 'account_admin_license_delete' lic.id %}" aria-label="Удалить лицензию">
                                 <i data-lucide="trash-2" aria-hidden="true"></i>
                             </a>
+                        </div>
+                    </td>
+                </tr>
+                <tr class="account-token-secret-row" id="admin-token-secret-{{ lic.id }}" data-token-panel hidden>
+                    <td colspan="7">
+                        <div class="account-token-secret account-admin-token-secret">
+                            <div class="account-token-secret-qr">
+                                <img src="{% url 'license_token_qr' lic.id %}" alt="QR токена {{ lic.display_number }}">
+                            </div>
+                            <div class="account-token-secret-text">
+                                <code class="account-token-secret-code">{{ lic.key }}</code>
+                            </div>
+                            <div class="account-token-secret-actions">
+                                <button class="account-token-action" type="button" data-copy-token data-token-value="{{ lic.key }}">
+                                    <i data-lucide="copy" aria-hidden="true"></i>
+                                    <span>Копировать</span>
+                                </button>
+                                <a class="account-token-action" href="{% url 'license_token_qr_png' lic.id %}" download="token-{{ lic.display_number }}.png">
+                                    <i data-lucide="download" aria-hidden="true"></i>
+                                    <span>Скачать QR</span>
+                                </a>
+                                <button
+                                    class="account-token-action"
+                                    type="button"
+                                    data-share-qr
+                                    data-qr-url="{% url 'license_token_qr_png' lic.id %}"
+                                    data-file-name="token-{{ lic.display_number }}.png"
+                                    data-share-title="QR токена {{ lic.display_number }}"
+                                >
+                                    <i data-lucide="share-2" aria-hidden="true"></i>
+                                    <span>Поделиться QR</span>
+                                </button>
+                            </div>
                         </div>
                     </td>
                 </tr>
