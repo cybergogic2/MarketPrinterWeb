@@ -559,7 +559,8 @@
 
         .account-token-secret-qr {
             width: 84px;
-            aspect-ratio: 1;
+            height: 84px;
+            overflow: hidden;
             border: 1px solid var(--account-subtle);
             border-radius: 6px;
             background: #ffffff;
@@ -569,6 +570,7 @@
             display: block;
             width: 100%;
             height: 100%;
+            object-fit: contain;
         }
 
         .account-token-secret-text {
@@ -980,6 +982,7 @@
 
             .account-token-secret-qr {
                 width: 112px;
+                height: 112px;
             }
         }
     </style>

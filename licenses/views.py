@@ -1044,7 +1044,10 @@ def svg_qr_response(value):
             content_type='image/svg+xml',
         )
 
-    image = qrcode.make(value, image_factory=SvgPathImage, box_size=10)
+    qr = qrcode.QRCode(box_size=10, border=1)
+    qr.add_data(value)
+    qr.make(fit=True)
+    image = qr.make_image(image_factory=SvgPathImage)
     response = HttpResponse(content_type='image/svg+xml')
     image.save(response)
     return response
