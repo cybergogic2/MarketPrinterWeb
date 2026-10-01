@@ -6,7 +6,7 @@
 <div class="account-page-head">
     <div>
         <h1>{{ form_title }}</h1>
-        <p>Назначьте владельца, ключ и срок действия токена.</p>
+        <p>Назначьте владельца, комментарий, статус и срок действия токена.</p>
     </div>
     <a class="account-button account-button-outline" href="{% url 'account_admin_licenses' %}">
         <i data-lucide="arrow-left" aria-hidden="true"></i>
@@ -41,11 +41,6 @@
                 {{ form.point_comment }}
                 {% for error in form.point_comment.errors %}<span class="account-field-error">{{ error }}</span>{% endfor %}
             </div>
-            <div class="account-field account-field-full">
-                {{ form.key.label_tag }}
-                {{ form.key }}
-                {% for error in form.key.errors %}<span class="account-field-error">{{ error }}</span>{% endfor %}
-            </div>
         </div>
 
         <label class="account-checkbox-line">
@@ -53,12 +48,6 @@
             <span>{{ form.is_active.label }}</span>
         </label>
         {% for error in form.is_active.errors %}<span class="account-field-error">{{ error }}</span>{% endfor %}
-
-        <label class="account-checkbox-line">
-            {{ form.auto_renew_enabled }}
-            <span>{{ form.auto_renew_enabled.label }}</span>
-        </label>
-        {% for error in form.auto_renew_enabled.errors %}<span class="account-field-error">{{ error }}</span>{% endfor %}
 
         <div class="account-actions">
             <button class="account-button account-button-primary" type="submit">

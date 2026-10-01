@@ -5,7 +5,6 @@ from django.contrib.auth.forms import UserCreationForm
 from django.db.models import Q
 from django.utils import timezone
 import re
-import uuid
 
 from .billing import rubles_to_kopecks
 from .models import (
@@ -384,12 +383,6 @@ class AdminUserForm(forms.ModelForm):
 class AdminLicenseForm(SearchableUserFieldMixin, forms.ModelForm):
     """Форма управления лицензией."""
     user_query = user_search_field()
-    key = forms.CharField(
-        label='Ключ',
-        required=False,
-        max_length=64,
-        widget=forms.TextInput(attrs={'class': 'account-input account-code-input'}),
-    )
     expires_at = forms.DateTimeField(
         label='Истекает',
         required=False,
@@ -402,11 +395,10 @@ class AdminLicenseForm(SearchableUserFieldMixin, forms.ModelForm):
 
     class Meta:
         model = LicenseKey
-        fields = ('user_query', 'point_comment', 'key', 'is_active', 'auto_renew_enabled', 'expires_at')
+        fields = ('user_query', 'point_comment', 'is_active', 'expires_at')
         labels = {
             'point_comment': 'Адрес пункта выдачи / комментарий',
             'is_active': 'Активна',
-            'auto_renew_enabled': 'Автопродление',
         }
         widgets = {
             'point_comment': forms.Textarea(attrs={
@@ -414,12 +406,7 @@ class AdminLicenseForm(SearchableUserFieldMixin, forms.ModelForm):
                 'rows': 3,
             }),
             'is_active': forms.CheckboxInput(attrs={'class': 'account-checkbox'}),
-            'auto_renew_enabled': forms.CheckboxInput(attrs={'class': 'account-checkbox'}),
         }
-
-    def clean_key(self):
-        key = self.cleaned_data.get('key')
-        return key or str(uuid.uuid4())
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
